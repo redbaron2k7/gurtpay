@@ -70,6 +70,6 @@ gurt.select("#login-btn"):on("click", function()
     loading_section.classList:remove("hidden")
     
     setTimeout(function()
-        gurt.location.goto("gurt://arsonflare.aura/oauth2?appid=10&redirect_uri=gurt://gurtpay.dev/login")
+        gurt.location.goto("gurt://arsonflare.aura/oauth2?appid=11&redirect_uri=gurt://gurtpay.dev/login")
     end, 1500)
 end)
