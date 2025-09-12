@@ -35,13 +35,6 @@ services:
     ports:
       - "4878:4878"
       
-    # Custom init script for certificate generation
-    command: >
-      sh -c "
-        /app/generate-certs.sh && 
-        /app/gurtpay-server
-      "
-      
     labels:
       # Coolify labels
       - coolify.managed=true
