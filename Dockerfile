@@ -1,5 +1,5 @@
 # Multi-stage Docker build for GurtPay
-FROM rust:1.80-bookworm as builder
+FROM rust:nightly-bookworm as builder
 
 # Install dependencies for building
 ENV DEBIAN_FRONTEND=noninteractive
