@@ -1,3 +1,5 @@
 *.pem
 target/
 *.db
+*.crt
+*.key

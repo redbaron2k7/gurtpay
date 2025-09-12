@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GurtPay Invoice Tester</title>
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <style>
+        /* Gurted utility CSS usage in head per standard */
+        h2 { text-2xl font-bold }
+        label { text-sm font-bold text-[#334155] }
+        small { text-sm text-[#64748b] }
+    </style>
+    
+</head>
+<body style="bg-[#f1f5f9] p-6">
+    <div style="bg-white rounded-lg border p-4 max-w-[900px] mx-auto">
+        <h2>GurtPay Invoice Tester</h2>
+        <p><small>Test create/verify invoice endpoints with your API key.</small></p>
+
+        <form id="form-baseurl">
+            <p>Base URL</p>
+            <input id="baseUrl" placeholder="gurt://gurtpay.dev" value="gurt://gurtpay.dev">
+        </form>
+
+        <form id="form-apikey">
+            <p>API Key</p>
+            <input id="apiKey" placeholder="gp_...">
+        </form>
+
+        <form id="form-amount">
+            <p>Amount (GC)</p>
+            <input id="amount" type="number" step="0.01" min="0" placeholder="99.99" value="9.99">
+        </form>
+
+        <form id="form-expires">
+            <p>Expires in hours (optional)</p>
+            <input id="expires" type="number" step="1" min="1" placeholder="24">
+        </form>
+
+        <form id="form-description">
+            <p>Description</p>
+            <input id="description" placeholder="Premium subscription">
+        </form>
+
+        <form id="form-customer">
+            <p>Customer name (optional)</p>
+            <input id="customerName" placeholder="John Doe">
+        </form>
+
+        <div>
+            <button id="createBtn" type="button">Create Invoice</button>
+            <button id="verifyBtn" type="button">Verify Last Invoice</button>
+            <button id="statusBtn" type="button">Get Status</button>
+        </div>
+
+        <p id="status"></p>
+
+        <form id="form-invoiceid">
+            <p>Last invoice id</p>
+            <input id="invoiceId" readonly placeholder="(created invoice id appears here)">
+        </form>
+
+        <div>
+            <p style="text-sm font-bold text-[#334155]">Response</p>
+            <pre id="output" style="bg-[#0b12211a] border rounded p-3 overflow-auto">(no response yet)</pre>
+        </div>
+    </div>
+
+    <script>
+    local function el(id)
+        return gurt.select('#' .. id)
+    end
+
+    local function out(value)
+        local output = el('output')
+        if not output then return end
+        if type(value) == 'string' then
+            output.text = value
+        else
+            output.text = JSON.stringify(value)
+        end
+    end
+
+    local function set_status(txt)
+        local s = el('status')
+        if s then s.text = txt end
+    end
+
+    local function trim_right_slash(s)
+        if not s then return '' end
+        if s:sub(-1) == '/' then return s:sub(1, -2) end
+        return s
+    end
+
+    local function api(path, options)
+        options = options or {}
+        local base = trim_right_slash((el('baseUrl') and el('baseUrl').value) or '')
+        local url = base .. path
+        local apiKey = (el('apiKey') and el('apiKey').value) or ''
+        local headers = options.headers or { ['Content-Type'] = 'application/json' }
+        if apiKey ~= '' then headers['Authorization'] = 'Bearer ' .. apiKey end
+        local response = fetch(url, {
+            method = options.method or 'GET',
+            headers = headers,
+            body = options.body
+        })
+        local body_text = response:text()
+        local ok, parsed = pcall(function() return JSON.parse(body_text) end)
+        return { ok = response:ok(), status = response.status, data = ok and parsed or body_text }
+    end
+
+    local createBtn = el('createBtn')
+    if createBtn then
+        createBtn:on('click', function()
+            set_status('Creating invoice...')
+            local amt = tonumber((el('amount') and el('amount').value) or '0') or 0
+            local desc = (el('description') and el('description').value) or 'Test invoice'
+            local cname = (el('customerName') and el('customerName').value) or nil
+            local expv = (el('expires') and el('expires').value) or ''
+            local exp = nil
+            if #expv > 0 then
+                local n = tonumber(expv)
+                if n then
+                    -- force integer type for JSON (avoid 1.0)
+                    exp = math.tointeger and math.tointeger(n) or math.floor(n)
+                end
+            end
+
+            -- Build JSON payload manually to ensure expires_in_hours is emitted as integer, not 1.0
+            local function q(v) return JSON.stringify(v) end
+            local parts = {
+                '"amount":' .. tostring(amt),
+                '"description":' .. q(desc)
+            }
+            if cname and cname ~= '' then
+                table.insert(parts, '"customer_name":' .. q(cname))
+            end
+            if exp ~= nil then
+                table.insert(parts, '"expires_in_hours":' .. tostring(exp))
+            end
+            local payload = '{' .. table.concat(parts, ',') .. '}'
+
+            local res = api('/api/invoice/create', {
+                method = 'POST',
+                body = payload
+            })
+            out(res)
+            if res.ok and res.data and res.data.invoice_id then
+                if el('invoiceId') then el('invoiceId').value = res.data.invoice_id end
+                set_status('Invoice created.')
+            else
+                set_status('Create failed (see response).')
+            end
+        end)
+    end
+
+    local verifyBtn = el('verifyBtn')
+    if verifyBtn then
+        verifyBtn:on('click', function()
+            local id = (el('invoiceId') and el('invoiceId').value) or ''
+            if id == '' then set_status('No invoice id to verify.') return end
+            set_status('Verifying invoice...')
+            local res = api('/api/invoice/verify/' .. id)
+            out(res)
+            set_status(res.ok and 'Verified.' or 'Verify failed.')
+        end)
+    end
+
+    local statusBtn = el('statusBtn')
+    if statusBtn then
+        statusBtn:on('click', function()
+            local id = (el('invoiceId') and el('invoiceId').value) or ''
+            if id == '' then set_status('No invoice id for status.') return end
+            set_status('Fetching status...')
+            local res = api('/api/invoice/status/' .. id)
+            out(res)
+            set_status(res.ok and 'Status fetched.' or 'Status failed.')
+        end)
+    end
+    </script>
+</body>
+</html>
+
+
