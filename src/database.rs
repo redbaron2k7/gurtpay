@@ -157,6 +157,108 @@ pub async fn init_database() -> Result<SqlitePool> {
     "#).execute(&pool).await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create money_requests table: {}", e)))?;
 
+    // Ads system tables
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_sites (
+            id TEXT PRIMARY KEY,
+            owner_business_id TEXT NOT NULL,
+            domain TEXT NOT NULL,
+            verified BOOLEAN DEFAULT FALSE,
+            verification_token TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (owner_business_id) REFERENCES businesses (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_sites table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_slots (
+            id TEXT PRIMARY KEY,
+            site_id TEXT NOT NULL,
+            slot_key TEXT NOT NULL,
+            format TEXT NOT NULL,
+            width INTEGER,
+            height INTEGER,
+            floor_price REAL DEFAULT 0.0,
+            active BOOLEAN DEFAULT TRUE,
+            UNIQUE(site_id, slot_key),
+            FOREIGN KEY (site_id) REFERENCES ads_sites (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_slots table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_campaigns (
+            id TEXT PRIMARY KEY,
+            advertiser_business_id TEXT NOT NULL,
+            budget_total REAL NOT NULL,
+            budget_remaining REAL NOT NULL,
+            bid_model TEXT NOT NULL,
+            max_cpm REAL,
+            max_cpc REAL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (advertiser_business_id) REFERENCES businesses (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_campaigns table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_creatives (
+            id TEXT PRIMARY KEY,
+            campaign_id TEXT NOT NULL,
+            format TEXT NOT NULL,
+            width INTEGER,
+            height INTEGER,
+            html TEXT,
+            image_url TEXT,
+            click_url TEXT,
+            status TEXT NOT NULL,
+            FOREIGN KEY (campaign_id) REFERENCES ads_campaigns (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_creatives table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_tokens (
+            id TEXT PRIMARY KEY,
+            token TEXT UNIQUE NOT NULL,
+            site_id TEXT NOT NULL,
+            slot_id TEXT NOT NULL,
+            campaign_id TEXT NOT NULL,
+            creative_id TEXT NOT NULL,
+            exp TEXT NOT NULL,
+            used BOOLEAN DEFAULT FALSE,
+            issued_at TEXT NOT NULL,
+            FOREIGN KEY (site_id) REFERENCES ads_sites (id),
+            FOREIGN KEY (slot_id) REFERENCES ads_slots (id),
+            FOREIGN KEY (campaign_id) REFERENCES ads_campaigns (id),
+            FOREIGN KEY (creative_id) REFERENCES ads_creatives (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_tokens table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS ads_impressions (
+            id TEXT PRIMARY KEY,
+            token_id TEXT NOT NULL,
+            site_id TEXT NOT NULL,
+            slot_id TEXT NOT NULL,
+            campaign_id TEXT NOT NULL,
+            creative_id TEXT NOT NULL,
+            device_hash TEXT,
+            ip_hash TEXT,
+            started_at TEXT,
+            viewable_at TEXT,
+            finalized_at TEXT,
+            click_at TEXT,
+            status TEXT NOT NULL,
+            cost_micros INTEGER DEFAULT 0,
+            FOREIGN KEY (token_id) REFERENCES ads_tokens (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_impressions table: {}", e)))?;
+
     Ok(pool)
 }
 

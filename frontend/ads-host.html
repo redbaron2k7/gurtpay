@@ -1,0 +1,137 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay Ads - Host Sites</title>
+    <script src="/static/ads-host.lua" />
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <style>
+        body {
+            bg-[#FFFFFF]
+            text-slate-800
+            font-sans
+        }
+        p { text-slate-800 }
+    </style>
+</head>
+
+<body style="bg-[#FFFFFF]">
+	<div style="bg-[#0b5cab]">
+		<div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg text-white">GurtPay Ads</p>
+			</div>
+			<div style="flex flex-row items-center gap-4">
+				<a href="/ads-dashboard" style="bg-white text-[#0b5cab] px-4 py-2 rounded-md hover:bg-[#f1f5f9] text-decoration-none">← Ads Dashboard</a>
+				<p id="username" style="text-white text-sm md:text-base">Username</p>
+			</div>
+		</div>
+	</div>
+
+	<div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+		<h1 style="text-4xl md:text-5xl font-bold text-slate-900">Host Sites</h1>
+		<p style="text-lg text-slate-600 max-w-xl">Register your websites to display ads and earn revenue from impressions.</p>
+	</div>
+
+	<div style="bg-[#f8fafc] py-16">
+		<div style="px-8 md:px-24 max-w-[1200px] mx-auto">
+			
+			<!-- Register New Site -->
+			<div id="register-form" style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">Register New Site</h2>
+				
+				<form id="site-form">
+					<div style="mb-2"><p style="text-slate-700 font-medium">Domain</p></div>
+					<input id="site-domain" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="example.com" required>
+					<p style="text-xs text-slate-500 mb-5">Enter your website domain (without http:// or gurt://)</p>
+				</form>
+
+				<p id="site-status" style="text-center text-sm mb-4"></p>
+				<button id="register-site-btn" style="w-full px-5 py-3 bg-[#0b5cab] text-white rounded-md font-bold hover:bg-[#094b97]">Register Site</button>
+			</div>
+
+			<!-- My Sites -->
+			<div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">My Sites</h2>
+				<div id="sites-list" style="space-y-4">
+					<p style="text-slate-500 text-center">Loading sites...</p>
+				</div>
+			</div>
+
+			<!-- Add Slot Form (Hidden by default) -->
+			<div id="slot-form" style="hidden bg-white rounded-lg border border-slate-200 p-6 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">Add Ad Slot</h2>
+				
+				<form id="add-slot-form">
+					<input id="slot-site-id" type="hidden">
+					
+					<div style="mb-2"><p style="text-slate-700 font-medium">Slot Key</p></div>
+					<input id="slot-key" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="header-banner" required>
+					<p style="text-xs text-slate-500 mb-4">Unique identifier for this ad slot on your site</p>
+
+					<div style="mb-2"><p style="text-slate-700 font-medium">Format</p></div>
+					<select id="slot-format" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" required>
+						<option value="">Select format</option>
+						<option value="banner">Banner</option>
+						<option value="square">Square</option>
+						<option value="sidebar">Sidebar</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<p style="text-xs text-slate-500 mb-4">Ad format that will be displayed</p>
+
+					<div style="grid grid-cols-2 gap-4 mb-4">
+						<div>
+							<div style="mb-2"><p style="text-slate-700 font-medium">Width (px)</p></div>
+							<input id="slot-width" type="number" style="w-full border border-slate-300 rounded px-4 py-3 bg-white" placeholder="300" min="50" max="1200">
+						</div>
+						<div>
+							<div style="mb-2"><p style="text-slate-700 font-medium">Height (px)</p></div>
+							<input id="slot-height" type="number" style="w-full border border-slate-300 rounded px-4 py-3 bg-white" placeholder="250" min="50" max="800">
+						</div>
+					</div>
+
+					<div style="mb-2"><p style="text-slate-700 font-medium">Floor Price (GC per 1000 impressions)</p></div>
+					<input id="slot-floor-price" type="number" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="1.00" min="0.10" step="0.10">
+					<p style="text-xs text-slate-500 mb-5">Minimum CPM rate you'll accept for this slot</p>
+				</form>
+
+				<p id="slot-status" style="text-center text-sm mb-4"></p>
+				<div style="flex gap-4">
+					<button id="cancel-slot-btn" style="flex-1 px-5 py-3 bg-gray-500 text-white rounded-md font-bold hover:bg-gray-600">Cancel</button>
+					<button id="add-slot-btn" style="flex-1 px-5 py-3 bg-green-600 text-white rounded-md font-bold hover:bg-green-700">Add Slot</button>
+				</div>
+			</div>
+
+			<!-- Integration Guide -->
+			<div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">Integration Guide</h2>
+				<div style="bg-[#f9fafb] p-4 rounded border mb-4">
+					<h3 style="font-bold text-lg mb-2">Step 1: Add Bootstrap Script</h3>
+					<div style="bg-[#1f2937] p-3 rounded mb-2">
+						<code style="text-green-300 text-sm font-mono">&lt;script src="gurt://gurtpay.dev/api/ads/bootstrap.lua"&gt;&lt;/script&gt;</code>
+					</div>
+					<p style="text-sm text-slate-600">Add this script to your page's head section</p>
+				</div>
+				<div style="bg-[#f9fafb] p-4 rounded border">
+					<h3 style="font-bold text-lg mb-2">Step 2: Add Ad Slots</h3>
+					<div style="bg-[#1f2937] p-3 rounded mb-2">
+						<code style="text-green-300 text-sm font-mono">&lt;div data-gp-ad-slot data-site-id="YOUR_SITE_ID" data-slot-key="YOUR_SLOT_KEY"&gt;&lt;/div&gt;</code>
+					</div>
+					<p style="text-sm text-slate-600">Replace YOUR_SITE_ID and YOUR_SLOT_KEY with values from your registered slots</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+		<div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg">GurtPay Ads</p>
+			</div>
+		</div>
+		<separator style="my-8 border-t border-[#e5e7eb]" />
+		<p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+	</div>
+</body>

@@ -20,6 +20,9 @@ bcrypt = "0.15"
 jsonwebtoken = "9.0"
 once_cell = "1.0"
 rustls = { version = "0.23", features = ["aws-lc-rs"] }
+hmac = "0.12.1"
+sha2 = "0.10.9"
+base64 = "0.22.1"
 
 [profile.release]
 opt-level = 3

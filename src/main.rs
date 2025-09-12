@@ -41,6 +41,9 @@ async fn main() -> Result<()> {
         .get("/pay/*", serve_pay_invoice_page)
         .get("/docs", serve_api_docs)
         .get("/api-docs", serve_api_docs)
+        .get("/ads-dashboard", serve_ads_dashboard)
+        .get("/ads-host", serve_ads_host)
+        .get("/ads-advertise", serve_ads_advertise)
         
         .post("/api/auth/verify", handle_auth_verify)
         .post("/api/user/register", handle_user_register)
@@ -59,6 +62,17 @@ async fn main() -> Result<()> {
         .get("/api/invoice/verify/*", handle_verify_invoice)
         .get("/api/invoice/status/*", handle_get_invoice_status)
         .post("/api/invoice/pay/*", handle_pay_invoice)
+        // Ads endpoints
+        .get("/api/ads/bootstrap.lua", handle_ads_bootstrap)
+        .get("/api/ads/serve", handle_ads_serve)
+        .post("/api/ads/beacon/start", handle_ads_beacon_start)
+        .post("/api/ads/beacon/viewable", handle_ads_beacon_viewable)
+        .get("/api/ads/click/*", handle_ads_click)
+        .post("/api/ads/site/register", handle_ads_register_site)
+        .post("/api/ads/slot/register", handle_ads_register_slot)
+        .post("/api/ads/campaign/create", handle_ads_create_campaign)
+        .post("/api/ads/creative/create", handle_ads_create_creative)
+        .post("/api/ads/campaign/fund", handle_ads_fund_campaign)
         
         .get("/static/*", serve_static_files);
     
@@ -126,6 +140,33 @@ fn serve_api_docs(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Fu
     })
 }
 
+fn serve_ads_dashboard(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
+    Box::pin(async move {
+        let html = include_str!("../frontend/ads-dashboard.html");
+        Ok(GurtResponse::ok()
+            .with_header("content-type", "text/html")
+            .with_string_body(html))
+    })
+}
+
+fn serve_ads_host(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
+    Box::pin(async move {
+        let html = include_str!("../frontend/ads-host.html");
+        Ok(GurtResponse::ok()
+            .with_header("content-type", "text/html")
+            .with_string_body(html))
+    })
+}
+
+fn serve_ads_advertise(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
+    Box::pin(async move {
+        let html = include_str!("../frontend/ads-advertise.html");
+        Ok(GurtResponse::ok()
+            .with_header("content-type", "text/html")
+            .with_string_body(html))
+    })
+}
+
 fn serve_send_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
     Box::pin(async move {
         let html = include_str!("../frontend/send.html");
@@ -165,6 +206,9 @@ fn serve_static_files(ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future:
         
         let content = match path {
             "login.lua" => include_str!("../frontend/static/login.lua"),
+            "ads-dashboard.lua" => include_str!("../frontend/static/ads-dashboard.lua"),
+            "ads-host.lua" => include_str!("../frontend/static/ads-host.lua"),
+            "ads-advertise.lua" => include_str!("../frontend/static/ads-advertise.lua"),
             "dashboard.lua" => include_str!("../frontend/static/dashboard.lua"),
             "business.lua" => include_str!("../frontend/static/business.lua"),
             "business-manage.lua" => include_str!("../frontend/static/business-manage.lua"),
