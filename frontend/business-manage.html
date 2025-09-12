@@ -1,0 +1,79 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay - Manage Business</title>
+    <script src="/static/business-manage.lua" />
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <style>
+        body {
+            bg-[#FFFFFF]
+            text-slate-800
+            font-sans
+        }
+        p { text-slate-800 }
+    </style>
+</head>
+
+<body style="bg-[#FFFFFF]">
+	<div style="bg-[#0b5cab]">
+		<div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg text-white">GurtPay</p>
+			</div>
+			<div style="flex flex-row items-center gap-4">
+				<a href="/" style="bg-white text-[#0b5cab] px-4 py-2 rounded-md hover:bg-[#f1f5f9] text-decoration-none">← Dashboard</a>
+				<p id="username" style="text-white text-sm md:text-base">Username</p>
+			</div>
+		</div>
+	</div>
+
+	<div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+		<h1 style="text-4xl md:text-5xl font-bold text-slate-900">Manage Business</h1>
+		<p style="text-lg text-slate-600 max-w-xl">Deposit and withdraw funds from your business account.</p>
+	</div>
+
+	<div style="bg-[#f8fafc] py-16">
+		<div style="px-8 md:px-24 flex flex-row gap-6 items-start max-w-[1200px] mx-auto">
+			<div style="flex-1 flex flex-col gap-6">
+				<div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+					<h2 style="text-2xl font-bold text-slate-900 mb-2">Business Information</h2>
+					<div id="business-info" style="bg-[#f9fafb] p-4 rounded border text-sm">Loading...</div>
+				</div>
+
+				<div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+					<h2 style="text-2xl font-bold text-slate-900 mb-4">Transfer Funds</h2>
+					
+					<form id="transfer-form">
+						<p style="text-slate-700 font-medium mb-1">Amount (GC)</p>
+						<input id="transfer-amount" type="number" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="0.00" min="0.01" step="0.01" />
+						<p style="text-xs text-slate-500 mb-4">Enter the amount to transfer</p>
+
+						<p style="text-slate-700 font-medium mb-1">Description</p>
+						<input id="transfer-description" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="Transfer description" />
+						<p style="text-xs text-slate-500 mb-6">Optional description for this transfer</p>
+					</form>
+
+					<p id="transfer-status" style="text-center text-sm mb-4"></p>
+
+					<div style="flex gap-4">
+						<button id="deposit-btn" style="flex-1 px-5 py-3 bg-green-600 text-white rounded-md font-bold hover:bg-green-700">Deposit to Business</button>
+						<button id="withdraw-btn" style="flex-1 px-5 py-3 bg-blue-600 text-white rounded-md font-bold hover:bg-blue-700">Withdraw to Personal</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+		<div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg">GurtPay</p>
+			</div>
+		</div>
+		<separator style="my-8 border-t border-[#e5e7eb]" />
+		<p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+	</div>
+</body>

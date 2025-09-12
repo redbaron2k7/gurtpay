@@ -1,0 +1,85 @@
+<head>
+    <title>GurtPay</title>
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="description" content="GurtPay wallet dashboard" />
+    <style>
+        body {
+            bg-[#FFFFFF]
+            text-slate-800
+            font-sans
+        }
+        p { text-slate-800 }
+    </style>
+    <script src="/static/dashboard.lua" />
+</head>
+
+<body style="bg-[#FFFFFF]">
+
+    <div style="bg-[#0b5cab]">
+        <div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg text-white">GurtPay</p>
+            </div>
+            <div style="flex flex-row items-center gap-4">
+                <p id="username" style="text-white text-sm md:text-base">Username</p>
+                <button id="logout" style="bg-white text-[#0b5cab] px-4 py-2 rounded-md hover:bg-[#f1f5f9]">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+        <h1 style="text-4xl md:text-5xl font-bold text-slate-900">Wallet Dashboard</h1>
+        <p style="text-lg text-slate-600 max-w-xl">Your wallet overview and recent transactions.</p>
+    </div>
+
+    <div style="bg-[#f8fafc] py-16">
+        <div style="px-8 md:px-24 flex flex-row gap-6 items-start max-w-[1200px] mx-auto">
+            <!-- Left column: wallet + transactions -->
+            <div style="flex-1 flex flex-col gap-6">
+                <div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                    <h2 style="text-2xl font-bold text-slate-900 mb-2">Available balance</h2>
+                    <p id="wallet-info" style="block text-sm text-slate-700 bg-[#f9fafb] p-4 rounded border">Loading...</p>
+                </div>
+
+                <div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                    <h2 style="text-2xl font-bold text-slate-900 mb-2">Recent transactions</h2>
+                    <p id="transactions-list" style="block text-sm text-slate-700 bg-[#f9fafb] p-4 rounded border">No transactions yet.</p>
+                </div>
+
+                <div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                    <h2 style="text-2xl font-bold text-slate-900 mb-2">My Businesses</h2>
+                    <div id="businesses-grid" style="flex flex-wrap gap-4 justify-start">
+                        <p style="text-sm text-slate-700 bg-[#f9fafb] p-4 rounded border">No businesses yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right column: quick actions -->
+            <div style="w-80 flex flex-col gap-6">
+                <div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                    <h3 style="text-lg font-bold text-slate-900 mb-3">Quick actions</h3>
+                    <div style="flex flex-col gap-2">
+                        <a href="/send" style="bg-[#0b5cab] text-white px-4 py-2 rounded hover:bg-[#094b97] text-decoration-none">Send money</a>
+                        <a href="/register-business" style="bg-white text-[#0b5cab] px-4 py-2 rounded border border-[#0b5cab] hover:bg-[#f3f4f6] text-decoration-none">Register business</a>
+                        <a href="/api-docs" style="bg-white text-[#0b5cab] px-4 py-2 rounded border border-[#0b5cab] hover:bg-[#f3f4f6] text-decoration-none">API Docs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+        <div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+        </div>
+        <separator style="my-8 border-t border-[#e5e7eb]" />
+        <p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+    </div>
+</body>

@@ -1,0 +1,75 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay - Send Money</title>
+    <script src="/static/send.lua" />
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+</head>
+
+<body style="bg-[#FFFFFF] text-slate-800 font-sans">
+    <div style="bg-[#0b5cab]">
+        <div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+            <div style="flex flex-row items-center gap-4">
+                <button id="back-btn" style="text-white px-4 py-2 rounded-md border border-white hover:bg-[#094b97]">← Dashboard</button>
+                <span id="username" style="text-white"></span>
+            </div>
+        </div>
+    </div>
+
+    <div style="px-8 py-16 md:px-24 max-w-[900px] mx-auto">
+        <div style="text-center mb-8">
+            <h1 style="text-3xl font-bold text-[#0b5cab]">Send Money</h1>
+        </div>
+
+        <div style="bg-white rounded-lg border border-slate-200 p-6 text-center mb-6 shadow-sm">
+            <p style="text-sm text-slate-600 mb-1">Available balance</p>
+            <p id="current-balance" style="text-2xl font-bold text-[#0b5cab]">Loading...</p>
+        </div>
+
+        <div style="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
+            <form id="send-form">
+                <div style="mb-2"><p style="text-slate-700 font-medium">Recipient Wallet Address</p></div>
+                <input id="recipient-address" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white text-sm mb-1" placeholder="Enter wallet address" required>
+                <p style="text-xs text-slate-500 mb-5">The recipient's unique wallet address</p>
+
+                <div style="mb-2"><p style="text-slate-700 font-medium">Amount (GC)</p></div>
+                <input id="amount" type="number" style="w-full border border-slate-300 rounded px-4 py-3 bg-white text-2xl font-bold text-center text-[#0b5cab] mb-2" placeholder="0.00" min="0.01" max="10000" step="0.01" required>
+                <p style="text-xs text-slate-500 mb-5">Maximum: 10,000 GC per transaction</p>
+
+                <div style="mb-2"><p style="text-slate-700 font-medium">Description (Optional)</p></div>
+                <input id="description" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="What's this payment for?" maxlength="100">
+                <p style="text-xs text-slate-500">Help the recipient know what this payment is for</p>
+            </form>
+
+            <div style="mt-6">
+                <p id="status-line" style="text-center text-sm mb-3"></p>
+                <button id="send-btn" style="w-full px-5 py-3 bg-[#0b5cab] text-white text-center rounded-md font-bold hover:bg-[#094b97] cursor-pointer border border-[#0b5cab]">Send Money</button>
+            </div>
+        </div>
+
+        <div style="bg-white rounded-lg p-6 mt-6 border border-slate-200">
+            <h3 style="font-bold text-lg mb-3">💡 Tips</h3>
+            <ul style="text-sm text-slate-600">
+                <li style="mb-2">Double-check the recipient's wallet address before sending</li>
+                <li style="mb-2">Transactions are instant and cannot be reversed</li>
+                <li style="mb-2">You can find your own wallet address on the dashboard</li>
+                <li>The daily sending limit is 10,000 GC per transaction</li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="bg-[#0b5cab] text-white py-10">
+        <div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center px-8 md:px-24">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+            <p style="text-white text-sm">© 2025 GurtPay — All rights reserved.</p>
+        </div>
+    </div>
+</body>

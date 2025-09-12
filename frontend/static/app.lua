@@ -1,0 +1,1 @@
+-- Empty app.lua file for static routing compatibility

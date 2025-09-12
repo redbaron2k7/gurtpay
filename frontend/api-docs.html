@@ -1,0 +1,211 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay API Documentation</title>
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <script src="/static/api-docs.lua" />
+    <style>
+        body {
+            bg-[#FFFFFF]
+            text-slate-800
+            font-sans
+            line-height-relaxed
+        }
+        p { text-slate-800 }
+        h1, h2, h3 { text-slate-900 }
+    </style>
+</head>
+
+<body style="bg-[#FFFFFF]">
+	<div style="bg-[#0b5cab]">
+		<div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg text-white">GurtPay API</p>
+			</div>
+			<div style="flex flex-row items-center gap-4">
+				<a href="/" style="bg-white text-[#0b5cab] px-4 py-2 rounded-md hover:bg-[#f1f5f9] text-decoration-none">← Dashboard</a>
+				<p id="username" style="text-white text-sm md:text-base">Username</p>
+			</div>
+		</div>
+	</div>
+
+	<div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+		<h1 style="text-4xl md:text-5xl font-bold text-slate-900">API Documentation</h1>
+		<p style="text-lg text-slate-600 max-w-xl">Integrate GurtPay payments into your website or application with our simple REST API.</p>
+	</div>
+
+	<div style="bg-[#f8fafc] py-16">
+		<div style="px-8 md:px-24 max-w-[1200px] mx-auto">
+			
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">🚀 Getting Started</h2>
+				<p style="text-slate-600 mb-4">To use the GurtPay API, you'll need:</p>
+				<div style="bg-[#f9fafb] p-4 rounded border mb-4">
+					<p style="text-sm font-medium text-slate-700 mb-2">1. Register a business account</p>
+					<p style="text-sm font-medium text-slate-700 mb-2">2. Get your API key from the dashboard</p>
+					<p style="text-sm font-medium text-slate-700">3. Start creating invoices!</p>
+				</div>
+				<p style="text-sm text-slate-500">All API requests must include your API key in the Authorization header: Bearer YOUR_API_KEY</p>
+			</div>
+
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">💫 Create Invoice</h2>
+				<p style="text-slate-600 mb-4">Create a new payment invoice for your customers.</p>
+				
+				<div style="bg-[#1f2937] p-4 rounded mb-4">
+					<p style="text-green-400 text-sm font-mono">POST /api/invoice/create</p>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Request Body</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-green-300 text-sm font-mono overflow-auto">{
+  "amount": 99.99,
+  "description": "Premium subscription",
+  "customer_name": "John Doe",
+  "expires_in_hours": 24
+}</pre>
+					</div>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Response</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-blue-300 text-sm font-mono overflow-auto">{
+  "invoice_id": "550e8400-e29b-41d4-a716-446655440000",
+  "payment_url": "gurt://gurtpay.dev/pay/550e8400-e29b-41d4-a716-446655440000",
+  "amount": 99.99,
+  "description": "Premium subscription",
+  "status": "pending",
+  "expires_at": "2025-09-13T12:00:00Z"
+}</pre>
+					</div>
+				</div>
+
+				<div style="bg-yellow-50 border border-yellow-200 p-4 rounded">
+					<p style="text-yellow-800 text-sm">📝 Note: Save the invoice_id to verify payment status later. Share the payment_url with your customer.</p>
+				</div>
+			</div>
+
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">✅ Verify Payment</h2>
+				<p style="text-slate-600 mb-4">Check if an invoice has been paid by your customer.</p>
+				
+				<div style="bg-[#1f2937] p-4 rounded mb-4">
+					<p style="text-green-400 text-sm font-mono">GET /api/invoice/verify/{invoice_id}</p>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Response (Paid)</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-blue-300 text-sm font-mono overflow-auto">{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "business_id": "123e4567-e89b-12d3-a456-426614174000",
+  "amount": 99.99,
+  "description": "Premium subscription",
+  "customer_name": "John Doe",
+  "status": "paid",
+  "paid_at": "2025-09-12T10:30:00Z",
+  "created_at": "2025-09-12T09:00:00Z",
+  "expires_at": "2025-09-13T12:00:00Z"
+}</pre>
+					</div>
+				</div>
+
+				<div style="bg-green-50 border border-green-200 p-4 rounded">
+					<p style="text-green-800 text-sm">💡 Tip: Check the status field. Possible values: pending, paid, expired, cancelled</p>
+				</div>
+			</div>
+
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">🛠️ Integration Example</h2>
+				<p style="text-slate-600 mb-4">Here's how to integrate GurtPay into your website:</p>
+				
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">1. Create Invoice (Lua)</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-green-300 text-sm font-mono overflow-auto">-- Lua example for creating invoice
+local response = fetch('gurt://gurtpay.dev/api/invoice/create', {
+  method = 'POST',
+  headers = {
+    ['Authorization'] = 'Bearer YOUR_API_KEY',
+    ['Content-Type'] = 'application/json'
+  },
+  body = JSON.stringify({
+    amount = 99.99,
+    description = 'Product purchase',
+    customer_name = 'John Doe'
+  })
+})
+
+local invoice = response:json()
+trace.log('Payment URL: ' .. invoice.payment_url)</pre>
+					</div>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">2. Redirect Customer</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-blue-300 text-sm font-mono overflow-auto">-- Redirect customer to payment page
+gurt.location.goto(invoice.payment_url)</pre>
+					</div>
+				</div>
+
+				<div>
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">3. Verify Payment</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-purple-300 text-sm font-mono overflow-auto">-- Check payment status
+local verifyResponse = fetch('gurt://gurtpay.dev/api/invoice/verify/' .. invoice_id, {
+  headers = {
+    ['Authorization'] = 'Bearer YOUR_API_KEY'
+  }
+})
+
+local invoiceStatus = verifyResponse:json()
+if invoiceStatus.status == 'paid' then
+  -- Payment successful! Deliver product/service
+  trace.log('Payment received: ' .. invoiceStatus.amount .. ' GC')
+end</pre>
+					</div>
+				</div>
+			</div>
+
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">⚠️ Error Codes</h2>
+				<div style="space-y-3">
+					<div style="bg-[#f9fafb] p-4 rounded border">
+						<p style="font-mono text-sm font-bold text-slate-900">400 - Bad Request</p>
+						<p style="text-sm text-slate-600">Invalid request data or missing required fields</p>
+					</div>
+					<div style="bg-[#f9fafb] p-4 rounded border">
+						<p style="font-mono text-sm font-bold text-slate-900">401 - Unauthorized</p>
+						<p style="text-sm text-slate-600">Invalid or missing API key</p>
+					</div>
+					<div style="bg-[#f9fafb] p-4 rounded border">
+						<p style="font-mono text-sm font-bold text-slate-900">404 - Not Found</p>
+						<p style="text-sm text-slate-600">Invoice not found or expired</p>
+					</div>
+					<div style="bg-[#f9fafb] p-4 rounded border">
+						<p style="font-mono text-sm font-bold text-slate-900">500 - Server Error</p>
+						<p style="text-sm text-slate-600">Internal server error, please try again</p>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+		<div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg">GurtPay API</p>
+			</div>
+			<p style="text-blue-100 text-sm">Secure payments for the modern web</p>
+		</div>
+		<separator style="my-8 border-t border-blue-600" />
+		<p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+	</div>
+</body>

@@ -1,0 +1,91 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay - Register Business</title>
+    <script src="/static/business.lua" />
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <style>
+        body {
+            bg-[#FFFFFF]
+            text-slate-800
+            font-sans
+        }
+        p { text-slate-800 }
+    </style>
+</head>
+
+<body style="bg-[#FFFFFF]">
+	<div style="bg-[#0b5cab]">
+		<div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg text-white">GurtPay</p>
+			</div>
+			<div style="flex flex-row items-center gap-4">
+				<a href="/" style="bg-white text-[#0b5cab] px-4 py-2 rounded-md hover:bg-[#f1f5f9] text-decoration-none">← Dashboard</a>
+				<p id="username" style="text-white text-sm md:text-base">Username</p>
+			</div>
+		</div>
+	</div>
+
+	<div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+		<h1 style="text-4xl md:text-5xl font-bold text-slate-900">Register Business</h1>
+		<p style="text-lg text-slate-600 max-w-xl">Set up your business to accept GurtPay.</p>
+	</div>
+
+	<div style="bg-[#f8fafc] py-16">
+		<div style="px-8 md:px-24 flex flex-row gap-6 items-start max-w-[1200px] mx-auto">
+			<div style="flex-1 flex flex-col gap-6">
+				<div id="registration-form" style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+					<h2 style="text-2xl font-bold text-slate-900 mb-2">Business details</h2>
+					<form id="business-form">
+						<div style="mb-2"><p style="text-slate-700 font-medium">Business Name</p></div>
+						<input id="business-name" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="Your business name" maxlength="100" required>
+						<p style="text-xs text-slate-500 mb-5">The official name of your business</p>
+
+						<div style="mb-2"><p style="text-slate-700 font-medium">Website URL (Optional)</p></div>
+						<input id="website-url" type="url" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-1" placeholder="gurt://yo.gurt">
+						<p style="text-xs text-slate-500 mb-6">Your business website or gurt:// address</p>
+					</form>
+
+					<p id="status-line-biz" style="text-center text-sm mb-3"></p>
+					<button id="register-btn" style="w-full px-5 py-3 bg-[#0b5cab] text-white text-center rounded-md font-bold hover:bg-[#094b97] cursor-pointer border border-[#0b5cab]">Register Business</button>
+				</div>
+
+				<div id="success-result" style="hidden bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+					<div style="text-center mb-6">
+						<div style="text-6xl mb-4">🎉</div>
+						<h2 style="text-2xl font-bold text-slate-900 mb-2">Business Registered!</h2>
+						<p style="text-slate-600">Your business has been successfully registered with GurtPay.</p>
+					</div>
+					<div style="mb-6">
+						<h3 style="text-lg font-bold text-slate-900 mb-3">Your API Key</h3>
+						<div id="api-key-display" style="bg-[#f8fafc] border border-slate-200 rounded p-4 font-mono text-sm word-break-all"></div>
+						<p style="text-xs mt-2 text-slate-600">Keep this API key secure. You'll need it to integrate payments.</p>
+					</div>
+					<div style="mb-6">
+						<h3 style="text-lg font-bold text-slate-900 mb-3">Business Information</h3>
+						<div style="bg-[#f8fafc] border border-slate-200 rounded p-4">
+							<p style="text-sm mb-2"><strong>Business Name:</strong> <span id="success-business-name"></span></p>
+							<p style="text-sm mb-2"><strong>Website:</strong> <span id="success-website-url">Not provided</span></p>
+							<p style="text-sm"><strong>Status:</strong> <span style="text-green-600">Active</span></p>
+						</div>
+					</div>
+					<a href="/" style="display: block; bg-[#0b5cab] text-white w-full py-3 rounded-md font-bold hover:bg-[#094b97] text-center cursor-pointer text-decoration-none">Go to Dashboard</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+		<div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+			<div style="flex flex-row items-center gap-2">
+				<img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+				<p style="font-bold text-lg">GurtPay</p>
+			</div>
+		</div>
+		<separator style="my-8 border-t border-[#e5e7eb]" />
+		<p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+	</div>
+</body>

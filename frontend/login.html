@@ -1,0 +1,90 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GurtPay - Login</title>
+    <script src="/static/login.lua" />
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#10b981" />
+</head>
+
+<body style="bg-[#FFFFFF] text-slate-800 font-sans">
+    <div style="bg-[#0b5cab]">
+        <div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[900px] mx-auto text-white">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+        </div>
+    </div>
+    <div style="bg-white p-8 md:p-12 rounded-2xl shadow-xl border border-slate-200 max-w-md w-full mx-auto my-16">
+        
+        <div style="text-center mb-6">
+            <img src="https://i.imgur.com/mEg1mYf.png" style="w-24 h-24 mb-4 mx-auto" alt="GurtPay Logo" />
+        </div>
+
+        <div style="mb-8">
+            <h1 style="text-3xl font-bold text-slate-900 mb-2 text-center">
+                Welcome to GurtPay
+            </h1>
+            <p style="text-base text-slate-600 text-center">
+                Virtual payments for the Gurt ecosystem
+            </p>
+        </div>
+
+        <div id="login-section">
+            <button id="login-btn" 
+                style="w-full bg-[#0b5cab] text-white px-5 py-4 rounded-lg font-bold hover:bg-[#094b97] transition duration-150 ease-in-out text-center mb-6">
+                🔗 Login with ArsonFlare
+            </button>
+            
+            <div style="bg-[#f8fafc] rounded-lg p-6">
+                <h3 style="font-bold text-lg mb-4 text-center text-slate-800">Welcome to GurtPay!</h3>
+                <div style="space-y-3">
+                    <div style="flex items-center gap-3 text-slate-700">
+                        <span style="text-xl">🎁</span>
+                        <span style="text-sm">Start with 5,000 GC welcome bonus</span>
+                    </div>
+                    <div style="flex items-center gap-3 text-slate-700">
+                        <span style="text-xl">💸</span>
+                        <span style="text-sm">Send money to other users instantly</span>
+                    </div>
+                    <div style="flex items-center gap-3 text-slate-700">
+                        <span style="text-xl">🎫</span>
+                        <span style="text-sm">Redeem codes for extra coins</span>
+                    </div>
+                    <div style="flex items-center gap-3 text-slate-700">
+                        <span style="text-xl">🏢</span>
+                        <span style="text-sm">Register your business to accept payments</span>
+                    </div>
+                    <div style="flex items-center gap-3 text-slate-700">
+                        <span style="text-xl">🔒</span>
+                        <span style="text-sm">Secure with ArsonFlare authentication</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="loading-section" style="hidden">
+            <div style="text-center p-8 text-slate-500">
+                <p>Redirecting to ArsonFlare...</p>
+                <p style="text-sm text-slate-400 mt-2">Please wait while we redirect you to login</p>
+            </div>
+        </div>
+        
+        <div id="verifying-section" style="hidden">
+            <div style="text-center p-8 text-slate-500">
+                <p>Verifying your credentials...</p>
+                <p style="text-sm text-slate-400 mt-2">Setting up your GurtPay wallet</p>
+            </div>
+        </div>
+    </div>
+    <div style="bg-[#0b5cab] text-white py-10 mt-16">
+        <div style="flex flex-row justify-between max-w-[900px] mx-auto items-center px-8 md:px-24">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+            <p style="text-white text-sm">© 2025 GurtPay — All rights reserved.</p>
+        </div>
+    </div>
+</body>

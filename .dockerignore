@@ -1,0 +1,40 @@
+# Build artifacts
+target/
+**/*.rs.bk
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+docs/
+
+# Temporary files
+*.tmp
+*.log
+
+# Certificate files (generated at runtime)
+*.pem
+*.crt
+*.key
+certs/
+
+# Database files
+*.db
+*.sqlite
+data/
+
+# Environment files
+.env*

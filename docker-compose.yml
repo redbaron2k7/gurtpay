@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  gurtpay:
+    build: .
+    container_name: gurtpay-server
+    restart: unless-stopped
+    environment:
+      # Required environment variables
+      - GURT_DOMAIN=${GURT_DOMAIN:?gurtpay.example.com}
+      - JWT_SECRET=${JWT_SECRET:?}
+      
+      # Optional configuration
+      - RUST_LOG=${RUST_LOG:-info}
+      - DATABASE_PATH=${DATABASE_PATH:-/app/data/gurtpay.db}
+      - CERT_PATH=${CERT_PATH:-/app/certs}
+      - GURT_CA_URL=${GURT_CA_URL:-gurt://dns.web}
+      
+      # Coolify magic variables for domain
+      - SERVICE_FQDN_GURTPAY=${SERVICE_FQDN_GURTPAY}
+      
+    volumes:
+      # Persistent storage for database
+      - type: bind
+        source: ./data
+        target: /app/data
+        is_directory: true
+        
+      # Certificate storage
+      - type: bind
+        source: ./certs
+        target: /app/certs
+        is_directory: true
+        
+    ports:
+      - "4878:4878"
+      
+    # Custom init script for certificate generation
+    command: >
+      sh -c "
+        /app/generate-certs.sh && 
+        /app/gurtpay-server
+      "
+      
+    labels:
+      # Coolify labels
+      - coolify.managed=true
+      - coolify.type=application
+      
+      # Traefik labels for Coolify proxy
+      - traefik.enable=true
+      - traefik.http.routers.gurtpay.rule=Host(`${GURT_DOMAIN}`)
+      - traefik.http.routers.gurtpay.entrypoints=websecure
+      - traefik.http.routers.gurtpay.tls=true
+      - traefik.http.services.gurtpay.loadbalancer.server.port=4878
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4878/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  default:
+    name: gurtpay-network
