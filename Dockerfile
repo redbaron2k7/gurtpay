@@ -1,7 +1,8 @@
 # Multi-stage Docker build for GurtPay
-FROM rust:1.75-bookworm as builder
+FROM rust:1.80-bookworm as builder
 
 # Install dependencies for building
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
@@ -25,6 +26,7 @@ RUN cargo build --release
 FROM debian:bookworm-slim
 
 # Install runtime dependencies
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
