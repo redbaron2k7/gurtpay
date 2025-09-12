@@ -11,9 +11,6 @@ RUN apt-get update && apt-get install -y \
 # Create app directory
 WORKDIR /app
 
-# Copy the gurtlib library first (for Docker layer caching)
-COPY ../gurted/protocol/library ./gurtlib
-
 # Copy Cargo files
 COPY Cargo.toml Cargo.lock ./
 
@@ -47,10 +44,6 @@ COPY --from=builder /app/target/release/gurtpay-server /app/gurtpay-server
 # Create directories for certificates and database
 RUN mkdir -p /app/certs /app/data && \
     chown -R gurtpay:gurtpay /app
-
-# Copy certificate generation script
-COPY docker/generate-certs.sh /app/generate-certs.sh
-RUN chmod +x /app/generate-certs.sh
 
 # Switch to app user
 USER gurtpay
