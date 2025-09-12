@@ -55,9 +55,5 @@ USER gurtpay
 # Expose port
 EXPOSE 4878
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:4878/ || exit 1
-
 # Default command
 CMD ["/app/gurtpay-server"]

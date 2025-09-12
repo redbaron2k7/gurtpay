@@ -53,13 +53,6 @@ services:
       - traefik.http.routers.gurtpay.entrypoints=websecure
       - traefik.http.routers.gurtpay.tls=true
       - traefik.http.services.gurtpay.loadbalancer.server.port=4878
-      
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4878/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 networks:
   default:
