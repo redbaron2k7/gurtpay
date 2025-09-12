@@ -27,8 +27,9 @@ async fn main() -> Result<()> {
     
     // Get certificate paths from environment or use defaults
     let cert_path = std::env::var("CERT_PATH").unwrap_or_else(|_| ".".to_string());
-    let cert_file = format!("{}/localhost.pem", cert_path);
-    let key_file = format!("{}/localhost-key.pem", cert_path);
+    let domain = std::env::var("GURT_DOMAIN").unwrap_or_else(|_| "localhost".to_string());
+    let cert_file = format!("{}/{}.crt", cert_path, domain);
+    let key_file = format!("{}/{}.key", cert_path, domain);
     
     let server = GurtServer::with_tls_certificates(&cert_file, &key_file)?
         .get("/", serve_dashboard)
