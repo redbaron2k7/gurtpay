@@ -1,5 +1,5 @@
 # Multi-stage Docker build for GurtPay
-FROM rust:nightly as builder
+FROM rust:1.80-bookworm AS builder
 
 # Install dependencies for building
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
 
 # Create app directory
 WORKDIR /app
