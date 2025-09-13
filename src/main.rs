@@ -1,6 +1,6 @@
 use gurtlib::prelude::*;
 use gurtlib::GurtStatusCode;
-use sqlx::SqlitePool;
+use sqlx::AnyPool;
 use rustls;
 
 mod models;
@@ -12,13 +12,12 @@ use handlers::*;
 use database::*;
 
 #[derive(Clone)]
-pub struct AppState {
-    db: SqlitePool,
-}
+pub struct AppState { db: AnyPool }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+    sqlx::any::install_default_drivers();
     
     tracing_subscriber::fmt::init();
     
@@ -34,9 +33,11 @@ async fn main() -> Result<()> {
     let server = GurtServer::with_tls_certificates(&cert_file, &key_file)?
         .get("/", serve_dashboard)
         .get("/login", serve_login_page)
+        .get("/register", serve_register_page)
         .get("/register-business", serve_business_registration)
         .get("/business-manage", serve_business_manage)
         .get("/send", serve_send_page)
+        .get("/cards", serve_cards_page)
         .get("/wallet", serve_wallet_page)
         .get("/pay/*", serve_pay_invoice_page)
         .get("/docs", serve_api_docs)
@@ -45,6 +46,8 @@ async fn main() -> Result<()> {
         .get("/ads-host", serve_ads_host)
         .get("/ads-advertise", serve_ads_advertise)
         
+        .post("/api/auth/register", handle_register_local)
+        .post("/api/auth/login", handle_login_local)
         .post("/api/auth/verify", handle_auth_verify)
         .post("/api/user/register", handle_user_register)
         .get("/api/user/profile", handle_get_profile)
@@ -57,6 +60,15 @@ async fn main() -> Result<()> {
         .post("/api/business/transfer", handle_business_transfer)
         .post("/api/codes/redeem", handle_redeem_code)
         .post("/api/admin/codes/create", handle_create_code)
+        
+        // Debit card endpoints
+        .post("/api/cards/create", handle_create_debit_card)
+        .get("/api/cards/list", handle_list_debit_cards)
+        .post("/api/cards/regenerate", handle_regenerate_debit_card)
+        .post("/api/cards/deactivate", handle_deactivate_debit_card)
+        
+        // Payment processing for external merchants
+        .post("/api/payments/process", handle_process_payment)
         
         .post("/api/invoice/create", handle_create_invoice)
         .get("/api/invoice/verify/*", handle_verify_invoice)
@@ -98,6 +110,15 @@ fn serve_dashboard(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::F
 fn serve_login_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
     Box::pin(async move {
         let html = include_str!("../frontend/login.html");
+        Ok(GurtResponse::ok()
+            .with_header("content-type", "text/html")
+            .with_string_body(html))
+    })
+}
+
+fn serve_register_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
+    Box::pin(async move {
+        let html = include_str!("../frontend/register.html");
         Ok(GurtResponse::ok()
             .with_header("content-type", "text/html")
             .with_string_body(html))
@@ -176,6 +197,15 @@ fn serve_send_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::F
     })
 }
 
+fn serve_cards_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
+    Box::pin(async move {
+        let html = include_str!("../frontend/cards.html");
+        Ok(GurtResponse::ok()
+            .with_header("content-type", "text/html")
+            .with_string_body(html))
+    })
+}
+
 fn serve_wallet_page(_ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GurtResponse>> + Send + 'static>> {
     Box::pin(async move {
         let html = r#"
@@ -206,13 +236,12 @@ fn serve_static_files(ctx: &ServerContext) -> std::pin::Pin<Box<dyn std::future:
         
         let content = match path {
             "login.lua" => include_str!("../frontend/static/login.lua"),
-            "ads-dashboard.lua" => include_str!("../frontend/static/ads-dashboard.lua"),
-            "ads-host.lua" => include_str!("../frontend/static/ads-host.lua"),
-            "ads-advertise.lua" => include_str!("../frontend/static/ads-advertise.lua"),
+            "register.lua" => include_str!("../frontend/static/register.lua"),
             "dashboard.lua" => include_str!("../frontend/static/dashboard.lua"),
             "business.lua" => include_str!("../frontend/static/business.lua"),
             "business-manage.lua" => include_str!("../frontend/static/business-manage.lua"),
             "send.lua" => include_str!("../frontend/static/send.lua"),
+            "cards.lua" => include_str!("../frontend/static/cards.lua"),
             "pay-invoice.lua" => include_str!("../frontend/static/pay-invoice.lua"),
             "api-docs.lua" => include_str!("../frontend/static/api-docs.lua"),
             _ => return Ok(GurtResponse::not_found()),

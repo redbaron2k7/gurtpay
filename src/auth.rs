@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey, Algorithm};
 use chrono::{Duration, Utc};
 use once_cell::sync::Lazy;
-use sqlx::{SqlitePool, Row};
+use sqlx::{AnyPool, Row};
 use uuid::Uuid;
+use bcrypt::{hash, verify, DEFAULT_COST};
 
 static JWT_SECRET: Lazy<String> = Lazy::new(|| {
     std::env::var("JWT_SECRET").unwrap_or_else(|_| {
@@ -29,41 +30,19 @@ pub struct SessionToken {
     pub expires_at: chrono::DateTime<Utc>,
 }
 
-pub async fn verify_arsonflare_token(token: &str) -> Result<ArsonFlareUser> {
-    println!("🔍 Verifying ArsonFlare token: {}", token);
-    
-    let client = reqwest::Client::new();
-    let response = client
-        .get("https://arsonbase.smart.is-a.dev/api/user/verify")
-        .header("Authorization", format!("Bearer {}", token))
-        .send()
-        .await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("ArsonFlare request failed: {}", e)))?;
-    
-    println!("📡 ArsonFlare API response status: {}", response.status());
-    
-    if !response.status().is_success() {
-        return Err(gurtlib::GurtError::invalid_message("Invalid ArsonFlare token".to_string()));
-    }
-    
-    let user_data: serde_json::Value = response.json().await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to parse ArsonFlare response: {}", e)))?;
-    
-    println!("📋 ArsonFlare response JSON: {}", serde_json::to_string_pretty(&user_data).unwrap_or_else(|_| "Failed to serialize".to_string()));
-    
-    let user_id = user_data["sub"].as_str()
-        .ok_or_else(|| gurtlib::GurtError::invalid_message("Missing 'sub' field in ArsonFlare response".to_string()))?
-        .to_string();
-    
-    let username = user_id.clone();
-    
-    Ok(ArsonFlareUser {
-        user_id,
-        username,
-    })
+pub fn hash_password(plain: &str) -> Result<String> {
+    let h = hash(plain, DEFAULT_COST)
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to hash password: {}", e)))?;
+    Ok(h)
 }
 
-pub async fn generate_session_token(pool: &SqlitePool, user: &User) -> Result<SessionToken> {
+pub fn verify_password(plain: &str, hashed: &str) -> Result<bool> {
+    let ok = verify(plain, hashed)
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Password verify failed: {}", e)))?;
+    Ok(ok)
+}
+
+pub async fn generate_session_token(pool: &AnyPool, user: &User) -> Result<SessionToken> {
     let session_id = Uuid::new_v4().to_string();
     let now = Utc::now();
     let expires_at = now + Duration::hours(24);
@@ -84,7 +63,7 @@ pub async fn generate_session_token(pool: &SqlitePool, user: &User) -> Result<Se
     
     sqlx::query(
         "INSERT INTO user_sessions (id, user_id, jwt_token, created_at, expires_at, active) 
-         VALUES (?, ?, ?, ?, ?, TRUE)"
+         VALUES ($1, $2, $3, $4, $5, TRUE)"
     )
     .bind(&session_id)
     .bind(user.id.to_string())
@@ -102,7 +81,7 @@ pub async fn generate_session_token(pool: &SqlitePool, user: &User) -> Result<Se
     })
 }
 
-pub async fn validate_session_token(pool: &SqlitePool, token: &str) -> Result<User> {
+pub async fn validate_session_token(pool: &AnyPool, token: &str) -> Result<User> {
     let token_data = decode::<SessionClaims>(
         token,
         &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
@@ -113,7 +92,7 @@ pub async fn validate_session_token(pool: &SqlitePool, token: &str) -> Result<Us
     
     let session_row = sqlx::query(
         "SELECT user_id, active, expires_at FROM user_sessions 
-         WHERE id = ? AND jwt_token = ? AND active = TRUE"
+         WHERE id = $1 AND jwt_token = $2 AND active = TRUE"
     )
     .bind(&claims.session_id)
     .bind(token)
@@ -129,7 +108,7 @@ pub async fn validate_session_token(pool: &SqlitePool, token: &str) -> Result<Us
                 .with_timezone(&Utc);
             
             if expires_at < Utc::now() {
-                sqlx::query("UPDATE user_sessions SET active = FALSE WHERE id = ?")
+                sqlx::query("UPDATE user_sessions SET active = FALSE WHERE id = $1")
                     .bind(&claims.session_id)
                     .execute(pool)
                     .await
@@ -143,7 +122,7 @@ pub async fn validate_session_token(pool: &SqlitePool, token: &str) -> Result<Us
             
             let user_row = sqlx::query(
                 "SELECT id, arsonflare_id, username, wallet_balance, wallet_address, created_at, is_admin 
-                 FROM users WHERE id = ?"
+                 FROM users WHERE id = $1"
             )
             .bind(user_id.to_string())
             .fetch_optional(pool)
@@ -169,14 +148,14 @@ pub async fn validate_session_token(pool: &SqlitePool, token: &str) -> Result<Us
     }
 }
 
-pub async fn invalidate_session(pool: &SqlitePool, token: &str) -> Result<()> {
+pub async fn invalidate_session(pool: &AnyPool, token: &str) -> Result<()> {
     let token_data = decode::<SessionClaims>(
         token,
         &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
         &Validation::new(Algorithm::HS256),
     ).map_err(|e| gurtlib::GurtError::invalid_message(format!("Invalid JWT token: {}", e)))?;
     
-    sqlx::query("UPDATE user_sessions SET active = FALSE WHERE id = ?")
+    sqlx::query("UPDATE user_sessions SET active = FALSE WHERE id = $1")
         .bind(&token_data.claims.session_id)
         .execute(pool)
         .await
@@ -185,7 +164,7 @@ pub async fn invalidate_session(pool: &SqlitePool, token: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn cleanup_expired_sessions(pool: &SqlitePool) -> Result<()> {
+pub async fn cleanup_expired_sessions(pool: &AnyPool) -> Result<()> {
     let now = Utc::now();
     sqlx::query("UPDATE user_sessions SET active = FALSE WHERE expires_at < ? AND active = TRUE")
         .bind(now.to_rfc3339())

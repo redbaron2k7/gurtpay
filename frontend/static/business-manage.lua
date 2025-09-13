@@ -45,6 +45,7 @@ local function load_business_info()
             local info_text = ""
             info_text = info_text .. "Business Name: " .. current_business.business_name .. "\n"
             info_text = info_text .. "Balance: " .. string.format("%.2f", current_business.balance) .. " GC\n"
+            info_text = info_text .. "Merchant ID: " .. (current_business.id or business_id) .. "\n"
             info_text = info_text .. "API Key: " .. current_business.api_key .. "\n"
             if current_business.website_url and current_business.website_url ~= "" then
                 info_text = info_text .. "Website: " .. current_business.website_url .. "\n"

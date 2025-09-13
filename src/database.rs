@@ -1,36 +1,45 @@
-use sqlx::{SqlitePool, Row};
+use sqlx::{AnyPool, Row};
 use uuid::Uuid;
-use chrono::Utc;
+use chrono::{Utc, Datelike};
 use crate::models::*;
 use gurtlib::Result;
 
-pub async fn get_database_pool() -> Result<SqlitePool> {
-    let db_path = std::env::current_dir()
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get current directory: {}", e)))?
-        .join("gurtpay.db");
-    
-    let connection_string = format!("sqlite:{}", db_path.display());
-    let pool = SqlitePool::connect(&connection_string).await
+pub async fn get_database_pool() -> Result<AnyPool> {
+    let db_url = std::env::var("DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_PATH"))
+        .unwrap_or_else(|_| "".to_string());
+
+    let conn_string = if db_url.is_empty() {
+        let db_path = std::env::current_dir()
+            .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get current directory: {}", e)))?
+            .join("gurtpay.db");
+        format!("sqlite:{}", db_path.display())
+    } else if db_url.starts_with("postgres://") || db_url.starts_with("postgresql://") {
+        db_url
+    } else if db_url.starts_with("sqlite:") || db_url.ends_with(".db") {
+        if db_url.starts_with("sqlite:") { db_url } else { format!("sqlite:{}", db_url) }
+    } else {
+        format!("sqlite:{}", db_url)
+    };
+
+    let pool = AnyPool::connect(&conn_string).await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Database connection failed: {}", e)))?;
-    
     Ok(pool)
 }
 
-pub async fn init_database() -> Result<SqlitePool> {
-    // Ensure the database file can be created by using an absolute path
-    let db_path = std::env::current_dir()
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get current directory: {}", e)))?
-        .join("gurtpay.db");
-    
-    println!("📁 Database path: {}", db_path.display());
-    
-    // Create the database file if it doesn't exist
-    if !db_path.exists() {
-        std::fs::File::create(&db_path)
-            .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create database file: {}", e)))?;
-        println!("📄 Created new database file");
+pub async fn init_database() -> Result<AnyPool> {
+    if std::env::var("DATABASE_URL").is_err() && std::env::var("DATABASE_PATH").is_err() {
+        let db_path = std::env::current_dir()
+            .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get current directory: {}", e)))?
+            .join("gurtpay.db");
+        println!("📁 Database path: {}", db_path.display());
+        if !db_path.exists() {
+            std::fs::File::create(&db_path)
+                .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create database file: {}", e)))?;
+            println!("📄 Created new database file");
+        }
     }
-    
+
     let pool = get_database_pool().await?;
     
     // Create tables
@@ -39,13 +48,22 @@ pub async fn init_database() -> Result<SqlitePool> {
             id TEXT PRIMARY KEY,
             arsonflare_id TEXT UNIQUE NOT NULL,
             username TEXT NOT NULL,
-            wallet_balance REAL DEFAULT 5000.0,
+            wallet_balance DOUBLE PRECISION DEFAULT 0.0,
             wallet_address TEXT UNIQUE NOT NULL,
             created_at TEXT NOT NULL,
             is_admin BOOLEAN DEFAULT FALSE
         )
     "#).execute(&pool).await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create users table: {}", e)))?;
+
+    sqlx::query(r#"
+        CREATE TABLE IF NOT EXISTS user_credentials (
+            user_id TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    "#).execute(&pool).await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create user_credentials table: {}", e)))?;
 
     sqlx::query(r#"
         CREATE TABLE IF NOT EXISTS businesses (
@@ -55,7 +73,7 @@ pub async fn init_database() -> Result<SqlitePool> {
             website_url TEXT,
             api_key TEXT UNIQUE NOT NULL,
             verified BOOLEAN DEFAULT TRUE,
-            balance REAL DEFAULT 0.0,
+            balance DOUBLE PRECISION DEFAULT 0.0,
             created_at TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
@@ -69,8 +87,8 @@ pub async fn init_database() -> Result<SqlitePool> {
             from_user_id TEXT,
             to_user_id TEXT,
             business_id TEXT,
-            amount REAL NOT NULL,
-            platform_fee REAL DEFAULT 0.0,
+            amount DOUBLE PRECISION NOT NULL,
+            platform_fee DOUBLE PRECISION DEFAULT 0.0,
             status TEXT DEFAULT 'completed',
             description TEXT NOT NULL,
             created_at TEXT NOT NULL,
@@ -86,7 +104,7 @@ pub async fn init_database() -> Result<SqlitePool> {
         CREATE TABLE IF NOT EXISTS redemption_codes (
             id TEXT PRIMARY KEY,
             code TEXT UNIQUE NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             max_uses INTEGER,
             current_uses INTEGER DEFAULT 0,
             created_by TEXT NOT NULL,
@@ -103,7 +121,7 @@ pub async fn init_database() -> Result<SqlitePool> {
             id TEXT PRIMARY KEY,
             code_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
-            amount_received REAL NOT NULL,
+            amount_received DOUBLE PRECISION NOT NULL,
             redeemed_at TEXT NOT NULL,
             FOREIGN KEY (code_id) REFERENCES redemption_codes (id),
             FOREIGN KEY (user_id) REFERENCES users (id),
@@ -116,7 +134,7 @@ pub async fn init_database() -> Result<SqlitePool> {
         CREATE TABLE IF NOT EXISTS invoices (
             id TEXT PRIMARY KEY,
             business_id TEXT NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             description TEXT NOT NULL,
             customer_name TEXT,
             status TEXT DEFAULT 'pending',
@@ -146,7 +164,7 @@ pub async fn init_database() -> Result<SqlitePool> {
             id TEXT PRIMARY KEY,
             from_user_id TEXT NOT NULL,
             to_user_id TEXT NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             description TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
             created_at TEXT NOT NULL,
@@ -157,119 +175,32 @@ pub async fn init_database() -> Result<SqlitePool> {
     "#).execute(&pool).await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create money_requests table: {}", e)))?;
 
-    // Ads system tables
     sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_sites (
+        CREATE TABLE IF NOT EXISTS debit_cards (
             id TEXT PRIMARY KEY,
-            owner_business_id TEXT NOT NULL,
-            domain TEXT NOT NULL,
-            verified BOOLEAN DEFAULT FALSE,
-            verification_token TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            card_number TEXT NOT NULL UNIQUE,
+            cvv TEXT NOT NULL,
+            expiration_month INTEGER NOT NULL,
+            expiration_year INTEGER NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
             created_at TEXT NOT NULL,
-            FOREIGN KEY (owner_business_id) REFERENCES businesses (id)
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
     "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_sites table: {}", e)))?;
-
-    sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_slots (
-            id TEXT PRIMARY KEY,
-            site_id TEXT NOT NULL,
-            slot_key TEXT NOT NULL,
-            format TEXT NOT NULL,
-            width INTEGER,
-            height INTEGER,
-            floor_price REAL DEFAULT 0.0,
-            active BOOLEAN DEFAULT TRUE,
-            UNIQUE(site_id, slot_key),
-            FOREIGN KEY (site_id) REFERENCES ads_sites (id)
-        )
-    "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_slots table: {}", e)))?;
-
-    sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_campaigns (
-            id TEXT PRIMARY KEY,
-            advertiser_business_id TEXT NOT NULL,
-            budget_total REAL NOT NULL,
-            budget_remaining REAL NOT NULL,
-            bid_model TEXT NOT NULL,
-            max_cpm REAL,
-            max_cpc REAL,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (advertiser_business_id) REFERENCES businesses (id)
-        )
-    "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_campaigns table: {}", e)))?;
-
-    sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_creatives (
-            id TEXT PRIMARY KEY,
-            campaign_id TEXT NOT NULL,
-            format TEXT NOT NULL,
-            width INTEGER,
-            height INTEGER,
-            html TEXT,
-            image_url TEXT,
-            click_url TEXT,
-            status TEXT NOT NULL,
-            FOREIGN KEY (campaign_id) REFERENCES ads_campaigns (id)
-        )
-    "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_creatives table: {}", e)))?;
-
-    sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_tokens (
-            id TEXT PRIMARY KEY,
-            token TEXT UNIQUE NOT NULL,
-            site_id TEXT NOT NULL,
-            slot_id TEXT NOT NULL,
-            campaign_id TEXT NOT NULL,
-            creative_id TEXT NOT NULL,
-            exp TEXT NOT NULL,
-            used BOOLEAN DEFAULT FALSE,
-            issued_at TEXT NOT NULL,
-            FOREIGN KEY (site_id) REFERENCES ads_sites (id),
-            FOREIGN KEY (slot_id) REFERENCES ads_slots (id),
-            FOREIGN KEY (campaign_id) REFERENCES ads_campaigns (id),
-            FOREIGN KEY (creative_id) REFERENCES ads_creatives (id)
-        )
-    "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_tokens table: {}", e)))?;
-
-    sqlx::query(r#"
-        CREATE TABLE IF NOT EXISTS ads_impressions (
-            id TEXT PRIMARY KEY,
-            token_id TEXT NOT NULL,
-            site_id TEXT NOT NULL,
-            slot_id TEXT NOT NULL,
-            campaign_id TEXT NOT NULL,
-            creative_id TEXT NOT NULL,
-            device_hash TEXT,
-            ip_hash TEXT,
-            started_at TEXT,
-            viewable_at TEXT,
-            finalized_at TEXT,
-            click_at TEXT,
-            status TEXT NOT NULL,
-            cost_micros INTEGER DEFAULT 0,
-            FOREIGN KEY (token_id) REFERENCES ads_tokens (id)
-        )
-    "#).execute(&pool).await
-        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create ads_impressions table: {}", e)))?;
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create debit_cards table: {}", e)))?;
 
     Ok(pool)
 }
 
-pub async fn create_user(pool: &SqlitePool, arsonflare_id: &str, username: &str) -> Result<User> {
+pub async fn create_user(pool: &AnyPool, arsonflare_id: &str, username: &str) -> Result<User> {
     let id = Uuid::new_v4();
     let wallet_address = generate_wallet_address();
     let created_at = Utc::now();
     
     sqlx::query(
-        "INSERT INTO users (id, arsonflare_id, username, wallet_address, created_at) 
-         VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO users (id, arsonflare_id, username, wallet_balance, wallet_address, created_at) 
+         VALUES (?, ?, ?, 0.0, ?, ?)"
     )
     .bind(id.to_string())
     .bind(arsonflare_id)
@@ -280,7 +211,7 @@ pub async fn create_user(pool: &SqlitePool, arsonflare_id: &str, username: &str)
     .await
     .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create user: {}", e)))?;
     
-    // Create welcome transaction
+    // Create welcome transaction and credit balance via ledger + wallet_balance
     let transaction_id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO transactions (id, transaction_type, to_user_id, amount, status, description, created_at, completed_at)
@@ -294,18 +225,24 @@ pub async fn create_user(pool: &SqlitePool, arsonflare_id: &str, username: &str)
     .await
     .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create welcome transaction: {}", e)))?;
     
+    sqlx::query("UPDATE users SET wallet_balance = wallet_balance + 5000.0 WHERE id = $1")
+        .bind(id.to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to credit welcome balance: {}", e)))?;
+    
     Ok(User {
         id,
         arsonflare_id: arsonflare_id.to_string(),
         username: username.to_string(),
-        wallet_balance: 5000.0,
+        wallet_balance: 0.0,
         wallet_address,
         created_at,
         is_admin: false,
     })
 }
 
-pub async fn get_user_by_arsonflare_id(pool: &SqlitePool, arsonflare_id: &str) -> Result<Option<User>> {
+pub async fn get_user_by_arsonflare_id(pool: &AnyPool, arsonflare_id: &str) -> Result<Option<User>> {
     let row = sqlx::query(
         "SELECT id, arsonflare_id, username, wallet_balance, wallet_address, created_at, is_admin 
          FROM users WHERE arsonflare_id = ?"
@@ -331,7 +268,7 @@ pub async fn get_user_by_arsonflare_id(pool: &SqlitePool, arsonflare_id: &str) -
     }
 }
 
-pub async fn get_user_by_wallet_address(pool: &SqlitePool, wallet_address: &str) -> Result<Option<User>> {
+pub async fn get_user_by_wallet_address(pool: &AnyPool, wallet_address: &str) -> Result<Option<User>> {
     let row = sqlx::query(
         "SELECT id, arsonflare_id, username, wallet_balance, wallet_address, created_at, is_admin 
          FROM users WHERE wallet_address = ?"
@@ -357,7 +294,7 @@ pub async fn get_user_by_wallet_address(pool: &SqlitePool, wallet_address: &str)
     }
 }
 
-pub async fn get_user_by_id(pool: &SqlitePool, user_id: Uuid) -> Result<Option<User>> {
+pub async fn get_user_by_id(pool: &AnyPool, user_id: Uuid) -> Result<Option<User>> {
     let row = sqlx::query(
         "SELECT id, arsonflare_id, username, wallet_balance, wallet_address, created_at, is_admin 
          FROM users WHERE id = ?"
@@ -383,12 +320,12 @@ pub async fn get_user_by_id(pool: &SqlitePool, user_id: Uuid) -> Result<Option<U
     }
 }
 
-pub async fn transfer_funds(pool: &SqlitePool, from_user_id: &Uuid, to_user_id: &Uuid, amount: f64, description: &str) -> Result<Transaction> {
+pub async fn transfer_funds(pool: &AnyPool, from_user_id: &Uuid, to_user_id: &Uuid, amount: f64, description: &str) -> Result<Transaction> {
     let mut tx = pool.begin().await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to start transaction: {}", e)))?;
     
     // Check sender balance
-    let sender_balance: f64 = sqlx::query_scalar("SELECT wallet_balance FROM users WHERE id = ?")
+    let sender_balance: f64 = sqlx::query_scalar("SELECT wallet_balance FROM users WHERE id = $1")
         .bind(from_user_id.to_string())
         .fetch_one(&mut *tx)
         .await
@@ -399,14 +336,14 @@ pub async fn transfer_funds(pool: &SqlitePool, from_user_id: &Uuid, to_user_id: 
     }
     
     // Update balances
-    sqlx::query("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?")
+    sqlx::query("UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2")
         .bind(amount)
         .bind(from_user_id.to_string())
         .execute(&mut *tx)
         .await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to debit sender: {}", e)))?;
     
-    sqlx::query("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?")
+    sqlx::query("UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2")
         .bind(amount)
         .bind(to_user_id.to_string())
         .execute(&mut *tx)
@@ -459,9 +396,42 @@ pub fn generate_wallet_address() -> String {
     format!("GC{}", chars.to_uppercase())
 }
 
+pub fn generate_card_number() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    
+    // Generate a 16-digit card number starting with 4
+    let mut digits = vec![4];
+    for _ in 1..16 {
+        digits.push(rng.gen_range(0..10));
+    }
+    
+    // Format as XXXX-XXXX-XXXX-XXXX
+    format!("{}{}{}{}-{}{}{}{}-{}{}{}{}-{}{}{}{}",
+        digits[0], digits[1], digits[2], digits[3],
+        digits[4], digits[5], digits[6], digits[7],
+        digits[8], digits[9], digits[10], digits[11],
+        digits[12], digits[13], digits[14], digits[15])
+}
+
+pub fn generate_cvv() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    format!("{:03}", rng.gen_range(100..1000))
+}
+
+pub fn generate_expiration() -> (i32, i32) {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let current_year = Utc::now().year();
+    let future_year = current_year + rng.gen_range(10..20);
+    let month = rng.gen_range(1..13);
+    (month, future_year)
+}
+
 // Invoice functions
 pub async fn create_invoice(
-    pool: &SqlitePool,
+    pool: &AnyPool,
     business_id: Uuid,
     amount: f64,
     description: &str,
@@ -499,7 +469,7 @@ pub async fn create_invoice(
     })
 }
 
-pub async fn get_invoice(pool: &SqlitePool, invoice_id: Uuid) -> Result<Option<Invoice>> {
+pub async fn get_invoice(pool: &AnyPool, invoice_id: Uuid) -> Result<Option<Invoice>> {
     let row = sqlx::query(r#"
         SELECT id, business_id, amount, description, customer_name, status, paid_at, created_at, expires_at
         FROM invoices WHERE id = ?
@@ -535,7 +505,7 @@ pub async fn get_invoice(pool: &SqlitePool, invoice_id: Uuid) -> Result<Option<I
     }
 }
 
-pub async fn mark_invoice_paid(pool: &SqlitePool, invoice_id: Uuid) -> Result<()> {
+pub async fn mark_invoice_paid(pool: &AnyPool, invoice_id: Uuid) -> Result<()> {
     let now = Utc::now();
     
     sqlx::query(r#"
@@ -550,7 +520,7 @@ pub async fn mark_invoice_paid(pool: &SqlitePool, invoice_id: Uuid) -> Result<()
     Ok(())
 }
 
-pub async fn get_business_by_api_key(pool: &SqlitePool, api_key: &str) -> Result<Option<Business>> {
+pub async fn get_business_by_api_key(pool: &AnyPool, api_key: &str) -> Result<Option<Business>> {
     let row = sqlx::query(r#"
         SELECT id, user_id, business_name, website_url, api_key, verified, balance, created_at
         FROM businesses WHERE api_key = ?
@@ -577,7 +547,7 @@ pub async fn get_business_by_api_key(pool: &SqlitePool, api_key: &str) -> Result
     }
 }
 
-pub async fn get_business_by_id(pool: &SqlitePool, business_id: Uuid) -> Result<Option<Business>> {
+pub async fn get_business_by_id(pool: &AnyPool, business_id: Uuid) -> Result<Option<Business>> {
     let row = sqlx::query(r#"
         SELECT id, user_id, business_name, website_url, api_key, verified, balance, created_at
         FROM businesses WHERE id = ?
@@ -605,7 +575,7 @@ pub async fn get_business_by_id(pool: &SqlitePool, business_id: Uuid) -> Result<
 }
 
 pub async fn transfer_to_business(
-    pool: &SqlitePool,
+    pool: &AnyPool,
     from_user_id: &Uuid,
     business_id: &Uuid,
     amount: f64,
@@ -614,7 +584,7 @@ pub async fn transfer_to_business(
     let mut tx = pool.begin().await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to start transaction: {}", e)))?;
     
-    let user_balance: f64 = sqlx::query_scalar("SELECT wallet_balance FROM users WHERE id = ?")
+    let user_balance: f64 = sqlx::query_scalar("SELECT wallet_balance FROM users WHERE id = $1")
         .bind(from_user_id.to_string())
         .fetch_one(&mut *tx)
         .await
@@ -624,14 +594,14 @@ pub async fn transfer_to_business(
         return Err(gurtlib::GurtError::invalid_message("Insufficient funds".to_string()));
     }
     
-    sqlx::query("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?")
+    sqlx::query("UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2")
         .bind(amount)
         .bind(from_user_id.to_string())
         .execute(&mut *tx)
         .await
         .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to debit user: {}", e)))?;
     
-    sqlx::query("UPDATE businesses SET balance = balance + ? WHERE id = ?")
+    sqlx::query("UPDATE businesses SET balance = balance + $1 WHERE id = $2")
         .bind(amount)
         .bind(business_id.to_string())
         .execute(&mut *tx)
@@ -641,8 +611,8 @@ pub async fn transfer_to_business(
     let transaction_id = Uuid::new_v4();
     let created_at = Utc::now();
     sqlx::query(
-        "INSERT INTO transactions (id, transaction_type, from_user_id, to_user_id, business_id, amount, platform_fee, status, description, created_at, completed_at) 
-         VALUES (?, 'business_payment', ?, NULL, ?, ?, 0.0, 'completed', ?, ?, ?)"
+        "INSERT INTO transactions (id, transaction_type, from_user_id, to_user_id, business_id, amount, platform_fee, status, description, created_at, completed_at) \
+         VALUES ($1, 'business_payment', $2, NULL, $3, $4, 0.0, 'completed', $5, $6, $7)"
     )
     .bind(transaction_id.to_string())
     .bind(from_user_id.to_string())
@@ -673,7 +643,7 @@ pub async fn transfer_to_business(
     })
 }
 
-pub async fn get_user_session(pool: &SqlitePool, session_token: &str) -> Result<Option<crate::models::UserSession>> {
+pub async fn get_user_session(pool: &AnyPool, session_token: &str) -> Result<Option<crate::models::UserSession>> {
     let row = sqlx::query(r#"
         SELECT id, user_id, session_token, created_at, expires_at
         FROM user_sessions WHERE session_token = ? AND expires_at > datetime('now')
@@ -694,5 +664,250 @@ pub async fn get_user_session(pool: &SqlitePool, session_token: &str) -> Result<
             }))
         }
         None => Ok(None),
+    }
+}
+
+pub async fn get_user_by_username(pool: &AnyPool, username: &str) -> Result<Option<User>> {
+    let row = sqlx::query(
+        "SELECT id, arsonflare_id, username, wallet_balance, wallet_address, created_at, is_admin \
+         FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(arsonflare_id) = LOWER($2)"
+    )
+    .bind(username)
+    .bind(username)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| gurtlib::GurtError::invalid_message(format!("Database query failed: {}", e)))?;
+    match row {
+        Some(row) => Ok(Some(User {
+            id: Uuid::parse_str(&row.get::<String, _>("id")).unwrap(),
+            arsonflare_id: row.get("arsonflare_id"),
+            username: row.get("username"),
+            wallet_balance: row.get("wallet_balance"),
+            wallet_address: row.get("wallet_address"),
+            created_at: chrono::DateTime::parse_from_rfc3339(&row.get::<String, _>("created_at")).unwrap().with_timezone(&Utc),
+            is_admin: row.get("is_admin"),
+        })),
+        None => Ok(None),
+    }
+}
+
+pub async fn set_user_password_hash(pool: &AnyPool, user_id: &Uuid, password_hash: &str) -> Result<()> {
+    sqlx::query(
+        "INSERT INTO user_credentials (user_id, password_hash) VALUES ($1, $2)\n         ON CONFLICT(user_id) DO UPDATE SET password_hash = excluded.password_hash"
+    )
+    .bind(user_id.to_string())
+    .bind(password_hash)
+    .execute(pool)
+    .await
+    .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to set credentials: {}", e)))?;
+    Ok(())
+}
+
+pub async fn get_password_hash(pool: &AnyPool, user_id: &Uuid) -> Result<Option<String>> {
+    let row = sqlx::query("SELECT password_hash FROM user_credentials WHERE user_id = $1")
+        .bind(user_id.to_string())
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get credentials: {}", e)))?;
+    Ok(row.map(|r| r.get::<String, _>("password_hash")))
+}
+
+pub async fn create_user_with_password(pool: &AnyPool, username: &str, password_hash: &str) -> Result<User> {
+    let id = Uuid::new_v4();
+    let wallet_address = generate_wallet_address();
+    let created_at = Utc::now();
+
+    sqlx::query(
+        "INSERT INTO users (id, arsonflare_id, username, wallet_balance, wallet_address, created_at) \
+         VALUES ($1, $2, $3, 0.0, $4, $5)"
+    )
+    .bind(id.to_string())
+    .bind(username)
+    .bind(username)
+    .bind(&wallet_address)
+    .bind(created_at.to_rfc3339())
+    .execute(pool)
+    .await
+    .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create user: {}", e)))?;
+
+    set_user_password_hash(pool, &id, password_hash).await?;
+
+    // Welcome transaction and credit
+    let transaction_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO transactions (id, transaction_type, to_user_id, amount, status, description, created_at, completed_at) \
+         VALUES ($1, 'welcome', $2, 5000.0, 'completed', 'Welcome to GurtPay!', $3, $4)"
+    )
+    .bind(transaction_id.to_string())
+    .bind(id.to_string())
+    .bind(created_at.to_rfc3339())
+    .bind(created_at.to_rfc3339())
+    .execute(pool)
+    .await
+    .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create welcome transaction: {}", e)))?;
+
+    sqlx::query("UPDATE users SET wallet_balance = wallet_balance + 5000.0 WHERE id = $1")
+        .bind(id.to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to credit welcome balance: {}", e)))?;
+
+    Ok(User {
+        id,
+        arsonflare_id: username.to_string(),
+        username: username.to_string(),
+        wallet_balance: 0.0,
+        wallet_address,
+        created_at,
+        is_admin: false,
+    })
+}
+
+// Debit card functions
+pub async fn create_debit_card(pool: &AnyPool, user_id: Uuid) -> Result<serde_json::Value> {
+    // Check if user already has an active card
+    let existing_card_count = sqlx::query("SELECT COUNT(*) as count FROM debit_cards WHERE user_id = $1 AND is_active = TRUE")
+        .bind(user_id.to_string())
+        .fetch_one(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to check existing cards: {}", e)))?;
+    
+    let count: i64 = existing_card_count.get("count");
+    if count > 0 {
+        return Err(gurtlib::GurtError::invalid_message("User already has an active debit card. Use regenerate instead.".to_string()));
+    }
+    
+    let card_id = Uuid::new_v4();
+    let card_number = generate_card_number();
+    let cvv = generate_cvv();
+    let (exp_month, exp_year) = generate_expiration();
+    let created_at = Utc::now();
+
+    sqlx::query("INSERT INTO debit_cards (id, user_id, card_number, cvv, expiration_month, expiration_year, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+        .bind(card_id.to_string())
+        .bind(user_id.to_string())
+        .bind(&card_number)
+        .bind(&cvv)
+        .bind(exp_month)
+        .bind(exp_year)
+        .bind(created_at.format("%Y-%m-%d %H:%M:%S").to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create debit card: {}", e)))?;
+
+    Ok(serde_json::json!({
+        "card_id": card_id,
+        "card_number": card_number,
+        "cvv": cvv,
+        "expiration_month": exp_month,
+        "expiration_year": exp_year,
+        "is_active": true,
+        "created_at": created_at
+    }))
+}
+
+pub async fn get_user_debit_cards(pool: &AnyPool, user_id: Uuid) -> Result<Vec<serde_json::Value>> {
+    let rows = sqlx::query("SELECT id, card_number, cvv, expiration_month, expiration_year, is_active, created_at FROM debit_cards WHERE user_id = $1 AND is_active = TRUE ORDER BY created_at DESC")
+        .bind(user_id.to_string())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to get debit cards: {}", e)))?;
+
+    let mut cards = Vec::new();
+    for row in rows {
+        let card_number: String = row.get("card_number");
+        
+        cards.push(serde_json::json!({
+            "card_id": row.get::<String, _>("id"),
+            "card_number": card_number,
+            "cvv": row.get::<String, _>("cvv"),
+            "expiration_month": row.get::<i32, _>("expiration_month"),
+            "expiration_year": row.get::<i32, _>("expiration_year"),
+            "is_active": row.get::<bool, _>("is_active"),
+            "created_at": row.get::<String, _>("created_at")
+        }));
+    }
+
+    Ok(cards)
+}
+
+pub async fn regenerate_debit_card(pool: &AnyPool, user_id: Uuid) -> Result<serde_json::Value> {
+    // First, deactivate the existing card
+    sqlx::query("UPDATE debit_cards SET is_active = FALSE WHERE user_id = $1 AND is_active = TRUE")
+        .bind(user_id.to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to deactivate existing card: {}", e)))?;
+    
+    // Create new card with new details
+    let card_id = Uuid::new_v4();
+    let card_number = generate_card_number();
+    let cvv = generate_cvv();
+    let (exp_month, exp_year) = generate_expiration();
+    let created_at = Utc::now();
+
+    sqlx::query("INSERT INTO debit_cards (id, user_id, card_number, cvv, expiration_month, expiration_year, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+        .bind(card_id.to_string())
+        .bind(user_id.to_string())
+        .bind(&card_number)
+        .bind(&cvv)
+        .bind(exp_month)
+        .bind(exp_year)
+        .bind(created_at.format("%Y-%m-%d %H:%M:%S").to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to create new debit card: {}", e)))?;
+
+    Ok(serde_json::json!({
+        "card_id": card_id,
+        "card_number": card_number,
+        "cvv": cvv,
+        "expiration_month": exp_month,
+        "expiration_year": exp_year,
+        "is_active": true,
+        "created_at": created_at
+    }))
+}
+
+pub async fn deactivate_debit_card(pool: &AnyPool, user_id: Uuid, card_id: Uuid) -> Result<()> {
+    sqlx::query("UPDATE debit_cards SET is_active = FALSE WHERE id = $1 AND user_id = $2")
+        .bind(card_id.to_string())
+        .bind(user_id.to_string())
+        .execute(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to deactivate card: {}", e)))?;
+
+    Ok(())
+}
+
+pub async fn verify_card_details(pool: &AnyPool, card_number: &str, cvv: &str, exp_month: i32, exp_year: i32, username: &str) -> Result<Option<(Uuid, Uuid)>> {
+    let row = sqlx::query("
+        SELECT dc.id, dc.user_id 
+        FROM debit_cards dc 
+        JOIN users u ON dc.user_id = u.id 
+        WHERE dc.card_number = $1 
+        AND dc.cvv = $2 
+        AND dc.expiration_month = $3 
+        AND dc.expiration_year = $4 
+        AND u.username = $5 
+        AND dc.is_active = TRUE
+    ")
+        .bind(card_number)
+        .bind(cvv)
+        .bind(exp_month)
+        .bind(exp_year)
+        .bind(username)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| gurtlib::GurtError::invalid_message(format!("Failed to verify card: {}", e)))?;
+
+    if let Some(row) = row {
+        let card_id = Uuid::parse_str(&row.get::<String, _>("id"))
+            .map_err(|e| gurtlib::GurtError::invalid_message(format!("Invalid card ID: {}", e)))?;
+        let user_id = Uuid::parse_str(&row.get::<String, _>("user_id"))
+            .map_err(|e| gurtlib::GurtError::invalid_message(format!("Invalid user ID: {}", e)))?;
+        Ok(Some((card_id, user_id)))
+    } else {
+        Ok(None)
     }
 }

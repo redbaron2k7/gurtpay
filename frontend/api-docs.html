@@ -173,6 +173,115 @@ end</pre>
 			</div>
 
 			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
+				<h2 style="text-2xl font-bold text-slate-900 mb-4">💳 Debit Card Payment Processing</h2>
+				<p style="text-slate-600 mb-4">Process payments directly using GurtPay debit cards. Perfect for external merchant websites.</p>
+				
+				<div style="bg-[#1f2937] p-4 rounded mb-4">
+					<p style="text-green-400 text-sm font-mono">POST /api/payments/process</p>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Request Body</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-blue-300 text-sm font-mono overflow-auto">{
+  "card_number": "4123-4567-8901-2345",
+  "cvv": "123",
+  "expiration_month": 12,
+  "expiration_year": 2034,
+  "cardholder_username": "username",
+  "amount": 29.99,
+  "merchant_id": "550e8400-e29b-41d4-a716-446655440000",
+  "description": "Product purchase"
+}</pre>
+					</div>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Response (Success)</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-green-300 text-sm font-mono overflow-auto">{
+  "success": true,
+  "transaction_id": "txn_123456789",
+  "amount": 29.99,
+  "merchant_name": "Your Business",
+  "message": "Payment processed successfully"
+}</pre>
+					</div>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Error Response</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-red-300 text-sm font-mono overflow-auto">{
+  "success": false,
+  "error": "Invalid card details"
+}</pre>
+					</div>
+				</div>
+
+				<div style="bg-yellow-50 border border-yellow-200 p-4 rounded mb-6">
+					<p style="text-yellow-800 text-sm"><strong>Security Note:</strong> All card details must match exactly. This includes the cardholder's username (not real name). Card details are validated in real-time and transactions are processed immediately.</p>
+				</div>
+
+				<div style="mb-6">
+					<h3 style="text-lg font-semibold text-slate-900 mb-3">Example Payment Form (HTML + Lua)</h3>
+					<div style="bg-[#1f2937] p-4 rounded">
+						<pre style="text-blue-300 text-sm font-mono overflow-auto">&lt;form id="payment-form"&gt;
+  &lt;input id="card-number" placeholder="Card Number" /&gt;
+  &lt;input id="cvv" placeholder="CVV" /&gt;
+  &lt;input id="exp-month" placeholder="MM" /&gt;
+  &lt;input id="exp-year" placeholder="YYYY" /&gt;
+  &lt;input id="username" placeholder="Cardholder Username" /&gt;
+  &lt;button type="button" id="pay-btn"&gt;Pay $29.99&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+local payBtn = gurt.select('#pay-btn')
+payBtn:on('click', function()
+  local cardNumber = gurt.select('#card-number').value
+  local cvv = gurt.select('#cvv').value
+  local expMonth = tonumber(gurt.select('#exp-month').value)
+  local expYear = tonumber(gurt.select('#exp-year').value)
+  local username = gurt.select('#username').value
+  
+  local response = fetch('/api/payments/process', {
+    method = 'POST',
+    headers = {
+      ['Content-Type'] = 'application/json'
+    },
+    body = JSON.stringify({
+      card_number = cardNumber,
+      cvv = cvv,
+      expiration_month = expMonth,
+      expiration_year = expYear,
+      cardholder_username = username,
+      amount = 29.99,
+      merchant_id = 'YOUR_BUSINESS_ID',
+      description = 'Product purchase'
+    })
+  })
+  
+  if response:ok() then
+    local result = response:json()
+    if result.success then
+      alert('Payment successful! Transaction ID: ' .. result.transaction_id)
+    else
+      alert('Payment failed: ' .. result.error)
+    end
+  else
+    alert('Payment error: ' .. response:text())
+  end
+end)
+&lt;/script&gt;</pre>
+					</div>
+				</div>
+
+				<div style="bg-blue-50 border border-blue-200 p-4 rounded">
+					<p style="text-blue-800 text-sm"><strong>💡 Pro Tip:</strong> Users can create and manage their debit cards from the GurtPay dashboard. Cards use usernames instead of real names for privacy in this fun platform!</p>
+				</div>
+			</div>
+
+			<div style="bg-white rounded-lg border border-slate-200 p-8 shadow-sm mb-8">
 				<h2 style="text-2xl font-bold text-slate-900 mb-4">⚠️ Error Codes</h2>
 				<div style="space-y-3">
 					<div style="bg-[#f9fafb] p-4 rounded border">

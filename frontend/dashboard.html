@@ -11,7 +11,6 @@
         }
         p { text-slate-800 }
     </style>
-    <script src="/static/dashboard.lua" />
 </head>
 
 <body style="bg-[#FFFFFF]">
@@ -50,8 +49,10 @@
                     <p id="transactions-list" style="block text-sm text-slate-700 bg-[#f9fafb] p-4 rounded border">No transactions yet.</p>
                 </div>
 
+
                 <div style="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
                     <h2 style="text-2xl font-bold text-slate-900 mb-2">My Businesses</h2>
+                    <p style="text-xs text-slate-500 mb-3">Use the Merchant ID when calling the Payments API.</p>
                     <div id="businesses-grid" style="flex flex-wrap gap-4 justify-start">
                         <p style="text-sm text-slate-700 bg-[#f9fafb] p-4 rounded border">No businesses yet.</p>
                     </div>
@@ -64,6 +65,7 @@
                     <h3 style="text-lg font-bold text-slate-900 mb-3">Quick actions</h3>
                     <div style="flex flex-col gap-2">
                         <a href="/send" style="bg-[#0b5cab] text-white px-4 py-2 rounded hover:bg-[#094b97] text-decoration-none">Send money</a>
+                        <a href="/cards" style="bg-[#10b981] text-white px-4 py-2 rounded hover:bg-[#059669] text-decoration-none">💳 My Cards</a>
                         <a href="/register-business" style="bg-white text-[#0b5cab] px-4 py-2 rounded border border-[#0b5cab] hover:bg-[#f3f4f6] text-decoration-none">Register business</a>
                         <a href="/ads-dashboard" style="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-decoration-none">📈 GurtPay Ads</a>
                         <a href="/api-docs" style="bg-white text-[#0b5cab] px-4 py-2 rounded border border-[#0b5cab] hover:bg-[#f3f4f6] text-decoration-none">API Docs</a>
@@ -83,4 +85,5 @@
         <separator style="my-8 border-t border-[#e5e7eb]" />
         <p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
     </div>
+    <script src="/static/dashboard.lua" />
 </body>

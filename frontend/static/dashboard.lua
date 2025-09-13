@@ -1,12 +1,40 @@
 local token = gurt.crumbs.get("gurtpay_session")
-if not token then 
-    gurt.location.goto("/login")
+if not token or token == "" then
+    setTimeout(function()
+        gurt.location.goto("/login")
+    end, 50)
+    return
 end
 
-local session = JSON.parse(token)
+local ok_parse, session = pcall(function() return JSON.parse(token) end)
+if not ok_parse or not session then
+    setTimeout(function()
+        gurt.location.goto("/login")
+    end, 50)
+    return
+end
+
 local session_token = session.session_token
 
 local wallet_info = {}
+
+local function ui(fn)
+    setTimeout(function()
+        pcall(fn)
+    end, 0)
+end
+
+local function handle_auth_error(response)
+    if response.status >= 500 then
+        gurt.crumbs.delete('gurtpay_session')
+        setTimeout(function()
+            gurt.location.goto('/login')
+        end, 100)
+        return true
+    end
+    
+    return false
+end
 
 local function render_wallet()
     local text_content = ""
@@ -14,7 +42,12 @@ local function render_wallet()
     text_content = text_content .. "Balance: " .. tostring(wallet_info.balance or 0) .. " GC" .. "\n\n"
     text_content = text_content .. "Total Sent: " .. tostring(wallet_info.total_sent or 0) .. " GC" .. "\n\n"
     text_content = text_content .. "Total Received: " .. tostring(wallet_info.total_received or 0) .. " GC"
-    gurt.select('#wallet-info').text = text_content
+    ui(function()
+        local target = gurt.select('#wallet-info')
+        if target then
+            target.text = text_content
+        end
+    end)
 end
 
 local function fetch_wallet()
@@ -26,10 +59,23 @@ local function fetch_wallet()
 
     if response:ok() then
         wallet_info = response:json()
-        gurt.select('#username').text = "Welcome, " .. (session.user and session.user.username or "User")
-        render_wallet()
+        ui(function()
+            local name_el = gurt.select('#username')
+            if name_el then
+                name_el.text = "Welcome, " .. (session.user and session.user.username or "User")
+            end
+            render_wallet()
+        end)
     else
-        gurt.select('#wallet-info').text = "Failed to load wallet info: " .. response:text()
+        if handle_auth_error(response) then
+            return
+        end
+        ui(function()
+            local target = gurt.select('#wallet-info')
+            if target then
+                target.text = "Failed to load wallet info: " .. response:text()
+            end
+        end)
     end
 end
 
@@ -55,7 +101,12 @@ local function render_transactions()
             text_content = text_content .. "  " .. (tx.created_at or "Unknown"):sub(1, 16):gsub("T", " ") .. "\n\n"
         end
     end
-    gurt.select('#transactions-list').text = text_content
+    ui(function()
+        local list_el = gurt.select('#transactions-list')
+        if list_el then
+            list_el.text = text_content
+        end
+    end)
 end
 
 local function fetch_transactions()
@@ -69,7 +120,15 @@ local function fetch_transactions()
         transactions_list = response:json()
         render_transactions()
     else
-        gurt.select('#transactions-list').text = "Failed to load transactions: " .. response:text()
+        if handle_auth_error(response) then
+            return
+        end
+        ui(function()
+            local list_el = gurt.select('#transactions-list')
+            if list_el then
+                list_el.text = "Failed to load transactions: " .. response:text()
+            end
+        end)
     end
 end
 
@@ -114,6 +173,11 @@ local function render_businesses()
             style = 'text-xs text-slate-500 font-mono'
         })
         
+        local merchant_id = gurt.create('p', {
+            text = '🆔 Merchant ID: ' .. (biz.id or 'N/A'),
+            style = 'text-xs text-slate-500 font-mono'
+        })
+        
         local status = gurt.create('span', {
             text = '✅ Verified',
             style = 'inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded'
@@ -136,6 +200,7 @@ local function render_businesses()
         card:append(title)
         card:append(balance)
         card:append(api_key)
+        card:append(merchant_id)
         if biz.website_url and biz.website_url ~= "" then
             local website = gurt.create('p', {
                 text = '🌐 ' .. biz.website_url,
@@ -161,13 +226,26 @@ local function fetch_businesses()
         businesses_list = response:json()
         render_businesses()
     else
-        gurt.select('#businesses-list').text = "Failed to load businesses: " .. response:text()
+        if handle_auth_error(response) then
+            return
+        end
+        ui(function()
+            local b_list = gurt.select('#businesses-list')
+            if b_list then
+                b_list.text = "Failed to load businesses: " .. response:text()
+            end
+        end)
     end
 end
 
-gurt.select('#logout'):on('click', function()
-    gurt.crumbs.delete('gurtpay_session')
-    gurt.location.goto('/login')
+ui(function()
+    local logout_btn = gurt.select('#logout')
+    if logout_btn then
+        logout_btn:on('click', function()
+            gurt.crumbs.delete('gurtpay_session')
+            gurt.location.goto('/login')
+        end)
+    end
 end)
 
 -- Function for business button actions
@@ -195,6 +273,9 @@ function perform_business_action(business_id, action)
             fetch_businesses()
             fetch_wallet()
         else
+            if handle_auth_error(response) then
+                return
+            end
             local ok_parse, error_data = pcall(function() return response:json() end)
             local error_msg = "Unknown error"
             if ok_parse and error_data and error_data.error then
@@ -205,6 +286,9 @@ function perform_business_action(business_id, action)
     end
 end
 
-fetch_wallet()
-fetch_transactions()
-fetch_businesses()
+
+setTimeout(function()
+    fetch_wallet()
+    fetch_transactions()
+    fetch_businesses()
+end, 0)

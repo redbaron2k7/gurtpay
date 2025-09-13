@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       # Required environment variables
-      - GURT_DOMAIN=${GURT_DOMAIN:?gurtpay.example.com}
+      - GURT_DOMAIN=${GURT_DOMAIN:?gurtpay.dev}
       - JWT_SECRET=${JWT_SECRET:?}
       
       # Optional configuration
@@ -15,9 +15,6 @@ services:
       - DATABASE_PATH=${DATABASE_PATH:-/app/data/gurtpay.db}
       - CERT_PATH=${CERT_PATH:-/app/certs}
       - GURT_CA_URL=${GURT_CA_URL:-gurt://dns.web}
-      
-      # Coolify magic variables for domain
-      - SERVICE_FQDN_GURTPAY=${SERVICE_FQDN_GURTPAY}
       
     volumes:
       # Persistent storage for database
