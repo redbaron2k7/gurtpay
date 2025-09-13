@@ -48,8 +48,6 @@ pub enum TransactionType {
     CodeRedemption,
     PlatformFee,
     Welcome,
-    AdsImpression,
-    AdsClick,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -221,95 +219,4 @@ pub struct UserSession {
     pub session_token: String,
     pub created_at: DateTime<Utc>,
     pub expires_at: DateTime<Utc>,
-}
-
-// ======== ADS MODELS ========
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdsSite {
-    pub id: Uuid,
-    pub owner_business_id: Uuid,
-    pub domain: String,
-    pub verified: bool,
-    pub verification_token: String,
-    pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdsSlot {
-    pub id: Uuid,
-    pub site_id: Uuid,
-    pub slot_key: String,
-    pub format: String,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-    pub floor_price: f64,
-    pub active: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdsCampaign {
-    pub id: Uuid,
-    pub advertiser_business_id: Uuid,
-    pub budget_total: f64,
-    pub budget_remaining: f64,
-    pub bid_model: String, // "cpm" or "cpc"
-    pub max_cpm: Option<f64>,
-    pub max_cpc: Option<f64>,
-    pub status: String,
-    pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdsCreative {
-    pub id: Uuid,
-    pub campaign_id: Uuid,
-    pub format: String,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-    pub html: Option<String>,
-    pub image_url: Option<String>,
-    pub click_url: String,
-    pub status: String,
-}
-
-// Request DTOs
-#[derive(Debug, Deserialize)]
-pub struct RegisterSiteRequest {
-    pub domain: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct RegisterSlotRequest {
-    pub site_id: String,
-    pub slot_key: String,
-    pub format: String,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-    pub floor_price: Option<f64>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateCampaignRequest {
-    pub budget_total: f64,
-    pub bid_model: String,
-    pub max_cpm: Option<f64>,
-    pub max_cpc: Option<f64>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateCreativeRequest {
-    pub campaign_id: String,
-    pub format: String,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-    pub html: Option<String>,
-    pub image_url: Option<String>,
-    pub click_url: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct FundCampaignRequest {
-    pub campaign_id: String,
-    pub amount: f64,
 }
