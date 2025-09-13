@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GurtPay Payment Processing Test</title>
+</head>
+<body style="font-sans bg-slate-50 min-h-screen py-8">
+    <div style="max-w-2xl mx-auto px-6">
+        <!-- Header -->
+        <div style="text-center mb-8">
+            <h1 style="text-3xl font-bold text-slate-900 mb-2">GurtPay Payment Test</h1>
+            <p style="text-slate-600">Test the payment processing API with sample data</p>
+        </div>
+
+        <!-- Payment Form -->
+        <div style="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 style="text-xl font-semibold text-slate-900 mb-4">Payment Details</h2>
+            
+            <form id="payment-form">
+                <p style="block text-sm font-medium text-slate-700 mb-1">Card Number</p>
+                <input id="card-number" type="text" placeholder="1234567890123456" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">CVV</p>
+                <input id="cvv" type="text" placeholder="123" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Expiration Month</p>
+                <input id="exp-month" type="number" placeholder="12" min="1" max="12"
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Expiration Year</p>
+                <input id="exp-year" type="number" placeholder="2025" min="2024" max="2070"
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Cardholder Username</p>
+                <input id="cardholder-username" type="text" placeholder="testuser" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Amount (GC)</p>
+                <input id="amount" type="number" step="0.01" placeholder="10.00" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Merchant ID</p>
+                <input id="merchant-id" type="text" placeholder="Business UUID (merchant_id)" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <p style="block text-sm font-medium text-slate-700 mb-1 mt-4">Description (Optional)</p>
+                <input id="description" type="text" placeholder="Test payment" 
+                       style="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <!-- Action Buttons -->
+                <div style="flex gap-3 mt-6">
+                    <button id="test-payment-btn" type="button"
+                            style="bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700 cursor-pointer">
+                        Process Payment
+                    </button>
+                    <button id="fill-sample-btn" type="button"
+                            style="bg-slate-600 text-white px-4 py-2 rounded-md font-medium hover:bg-slate-700 cursor-pointer">
+                        Fill Sample Data
+                    </button>
+                    <button id="clear-btn" type="button"
+                            style="bg-red-600 text-white px-4 py-2 rounded-md font-medium hover:bg-red-700 cursor-pointer">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Response Section -->
+        <div style="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 style="text-xl font-semibold text-slate-900 mb-4">API Response</h2>
+            <div id="response-container" style="min-h-24">
+                <p style="text-slate-500 italic">No response yet. Click "Process Payment" to test the API.</p>
+            </div>
+        </div>
+
+        <!-- Raw Request/Response -->
+        <div style="bg-slate-900 rounded-lg p-6 mt-6">
+            <h3 style="text-lg font-semibold text-white mb-4">Raw Request & Response</h3>
+            <div id="raw-container" style="font-mono text-sm text-slate-300">
+                <p style="text-slate-500">Waiting for API call...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/lua">
+        -- Fill sample data for testing
+        local function fill_sample_data()
+            local card_number = gurt.select('#card-number')
+            local cvv = gurt.select('#cvv')
+            local exp_month = gurt.select('#exp-month')
+            local exp_year = gurt.select('#exp-year')
+            local cardholder_username = gurt.select('#cardholder-username')
+            local amount = gurt.select('#amount')
+            local merchant_id = gurt.select('#merchant-id')
+            local description = gurt.select('#description')
+
+            if card_number then card_number.value = "1234567890123456" end
+            if cvv then cvv.value = "123" end
+            if exp_month then exp_month.value = "12" end
+            if exp_year then exp_year.value = "2025" end
+            if cardholder_username then cardholder_username.value = "testuser" end
+            if amount then amount.value = "29.99" end
+            if merchant_id then merchant_id.value = "test_merchant_123" end
+            if description then description.value = "Test payment transaction" end
+        end
+
+        -- Clear all form fields
+        local function clear_form()
+            local fields = {'#card-number', '#cvv', '#exp-month', '#exp-year', '#cardholder-username', '#amount', '#merchant-id', '#description'}
+            
+            for i = 1, #fields do
+                local field = gurt.select(fields[i])
+                if field then
+                    field.value = ""
+                end
+            end
+            
+            -- Clear response
+            local response_container = gurt.select('#response-container')
+            local raw_container = gurt.select('#raw-container')
+            
+            if response_container then
+                response_container.innerHTML = '<p style="text-slate-500 italic">Form cleared. Ready for new test.</p>'
+            end
+            
+            if raw_container then
+                raw_container.innerHTML = '<p style="text-slate-500">Waiting for API call...</p>'
+            end
+        end
+
+        -- Show response in UI
+        local function show_response(success, data, raw_request, raw_response)
+            local response_container = gurt.select('#response-container')
+            local raw_container = gurt.select('#raw-container')
+            
+            if response_container then
+                if success then
+                    response_container.innerHTML = string.format([[
+                        <div style="border border-green-200 bg-green-50 rounded-lg p-4">
+                            <h4 style="text-green-800 font-semibold mb-2">✅ Payment Successful</h4>
+                            <p style="text-green-700">Transaction ID: %s</p>
+                            <p style="text-green-700">Status: %s</p>
+                        </div>
+                    ]], data.transaction_id or "N/A", data.status or "Success")
+                else
+                    response_container.innerHTML = string.format([[
+                        <div style="border border-red-200 bg-red-50 rounded-lg p-4">
+                            <h4 style="text-red-800 font-semibold mb-2">❌ Payment Failed</h4>
+                            <p style="text-red-700">Error: %s</p>
+                        </div>
+                    ]], data.error or "Unknown error")
+                end
+            end
+            
+            if raw_container then
+                raw_container.innerHTML = string.format([[
+                    <div style="mb-4">
+                        <h4 style="text-white font-semibold mb-2">📤 Request:</h4>
+                        <pre style="bg-slate-800 p-3 rounded text-xs overflow-x-auto">%s</pre>
+                    </div>
+                    <div>
+                        <h4 style="text-white font-semibold mb-2">📥 Response:</h4>
+                        <pre style="bg-slate-800 p-3 rounded text-xs overflow-x-auto">%s</pre>
+                    </div>
+                ]], raw_request, raw_response)
+            end
+        end
+
+        -- Process payment
+        local function process_payment()
+            -- Get form values
+            local card_number = gurt.select('#card-number').value
+            local cvv = gurt.select('#cvv').value
+            local exp_month = tonumber(gurt.select('#exp-month').value)
+            local exp_year = tonumber(gurt.select('#exp-year').value)
+            local cardholder_username = gurt.select('#cardholder-username').value
+            local amount = tonumber(gurt.select('#amount').value)
+            local merchant_id = gurt.select('#merchant-id').value
+            local description = gurt.select('#description').value or "Test payment"
+
+            -- Validate required fields
+            if not card_number or card_number == "" then
+                show_response(false, {error = "Card number is required"}, "", "")
+                return
+            end
+            
+            if not cvv or cvv == "" then
+                show_response(false, {error = "CVV is required"}, "", "")
+                return
+            end
+            
+            if not exp_month or exp_month < 1 or exp_month > 12 then
+                show_response(false, {error = "Valid expiration month (1-12) is required"}, "", "")
+                return
+            end
+            
+            if not exp_year or exp_year < 2024 then
+                show_response(false, {error = "Valid expiration year is required"}, "", "")
+                return
+            end
+            
+            if not cardholder_username or cardholder_username == "" then
+                show_response(false, {error = "Cardholder username is required"}, "", "")
+                return
+            end
+            
+            if not amount or amount <= 0 then
+                show_response(false, {error = "Valid amount is required"}, "", "")
+                return
+            end
+            
+            if not merchant_id or merchant_id == "" then
+                show_response(false, {error = "Merchant ID is required"}, "", "")
+                return
+            end
+
+            -- Prepare payment data
+            local payment_data = {
+                card_number = card_number,
+                cvv = cvv,
+                expiration_month = exp_month,
+                expiration_year = exp_year,
+                cardholder_username = cardholder_username,
+                amount = amount,
+                merchant_id = merchant_id,
+                description = description
+            }
+
+            local raw_request = JSON.stringify(payment_data, nil, 2)
+
+            -- Show loading state
+            show_response(true, {status = "Processing..."}, raw_request, "⏳ Sending request...")
+
+            -- Make API call
+            local response = fetch('gurt://localhost/api/payments/process', {
+                method = 'POST',
+                headers = {
+                    ['Content-Type'] = 'application/json'
+                },
+                body = JSON.stringify(payment_data)
+            })
+
+            local raw_response = response:text()
+            
+            if response:ok() then
+                local ok_parse, response_data = pcall(function() return JSON.parse(raw_response) end)
+                if ok_parse then
+                    show_response(true, response_data, raw_request, raw_response)
+                else
+                    show_response(true, {status = "Success", raw = raw_response}, raw_request, raw_response)
+                end
+            else
+                local ok_parse, error_data = pcall(function() return JSON.parse(raw_response) end)
+                if ok_parse and error_data.error then
+                    show_response(false, error_data, raw_request, raw_response)
+                else
+                    show_response(false, {error = "HTTP " .. response.status .. ": " .. raw_response}, raw_request, raw_response)
+                end
+            end
+        end
+
+        -- Add event listeners (bind directly; script is at end of body)
+        local test_btn = gurt.select('#test-payment-btn')
+        local fill_btn = gurt.select('#fill-sample-btn')
+        local clear_btn = gurt.select('#clear-btn')
+
+        if test_btn then
+            test_btn:on('click', process_payment)
+        end
+
+        if fill_btn then
+            fill_btn:on('click', fill_sample_data)
+        end
+
+        if clear_btn then
+            clear_btn:on('click', clear_form)
+        end
+    </script>
+</body>
+</html>

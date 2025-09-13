@@ -1,0 +1,68 @@
+<head>
+    <title>GurtPay - Create Account</title>
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <meta name="description" content="Create your GurtPay account" />
+
+    <style>
+        body {
+            bg-[#FFFFFF] text-slate-800 font-sans
+        }
+        p { text-slate-800 }
+    </style>
+
+    <script src="/static/register.lua" />
+</head>
+
+<body style="bg-[#FFFFFF]">
+    <div style="bg-[#0b5cab]">
+        <div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-[1200px] mx-auto text-white">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg text-white">GurtPay</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="px-8 py-16 md:px-24 flex flex-col items-center justify-center text-center gap-6 max-w-[900px] mx-auto">
+        <img src="https://i.imgur.com/mEg1mYf.png" style="w-16 h-16" alt="GurtPay Logo" />
+        <h1 style="text-4xl md:text-5xl font-bold text-slate-900">Create your account</h1>
+        <p style="text-lg text-slate-600 max-w-xl">Join the GurtPay ecosystem</p>
+    </div>
+
+    <div style="max-w-[900px] mx-auto px-8 md:px-24">
+        <div style="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-sm text-center mb-6 max-w-md mx-auto">
+            🎉 Welcome bonus: Get 5,000 GC when you create your account!
+        </div>
+
+        <div style="bg-white rounded-lg shadow-sm p-8 border border-slate-200 max-w-md mx-auto">
+            <form id="register-form">
+                <div style="mb-2"><p style="text-slate-700 font-medium">Username</p></div>
+                <input id="username" type="text" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-5" placeholder="yourname" maxlength="32" minlength="2" required="true" />
+                
+                <div style="mb-2"><p style="text-slate-700 font-medium">Password</p></div>
+                <input id="password" type="password" style="w-full border border-slate-300 rounded px-4 py-3 bg-white mb-5" placeholder="at least 6 characters" required="true" />
+                
+                <div style="mb-4">
+                    <p id="status-message" style="text-center text-sm"></p>
+                </div>
+                <button id="register-btn" type="button" style="w-full px-5 py-3 bg-[#0b5cab] text-white text-center rounded-md font-bold hover:bg-[#094b97] cursor-pointer">Create Account</button>
+            </form>
+
+            <p style="text-center mt-6 text-slate-600">
+                Already have an account? 
+                <a href="/login" style="text-[#0b5cab] hover:text-[#094b97] cursor-pointer font-medium">Sign in here</a>
+            </p>
+        </div>
+    </div>
+
+    <div style="bg-[#0b5cab] text-white py-10">
+        <div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center px-8 md:px-24">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+            <p style="text-white text-sm">© 2025 GurtPay — All rights reserved.</p>
+        </div>
+    </div>
+</body>

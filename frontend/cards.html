@@ -1,0 +1,107 @@
+<head>
+    <title>My Debit Cards - GurtPay</title>
+    <icon src="https://i.imgur.com/mEg1mYf.png" />
+    <meta name="theme-color" content="#0b5cab" />
+    <meta name="description" content="Manage your GurtPay debit cards" />
+</head>
+
+<body style="bg-slate-50 font-sans">
+    <!-- Header -->
+    <div style="bg-blue-600">
+        <div style="flex flex-row justify-between items-center px-8 py-4 md:px-24 gap-10 max-w-7xl mx-auto text-white">
+            <div style="flex flex-row items-center gap-3">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-10 h-10 rounded-lg" />
+                <div>
+                    <p style="font-bold text-xl text-white">GurtPay</p>
+                    <p style="text-blue-100 text-sm">Debit Cards</p>
+                </div>
+            </div>
+            <div style="flex flex-row items-center gap-4">
+                <button id="back-btn" style="text-white px-4 py-2 rounded-md border border-white hover:bg-[#094b97]">← Dashboard</button>
+                <p id="username" style="text-white text-sm md:text-base">Loading...</p>
+                <button id="logout" style="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 font-medium">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div style="px-8 py-12 md:px-24">
+        <div style="flex flex-col items-center justify-center text-center mb-12 max-w-4xl mx-auto">
+            <h1 style="text-4xl md:text-5xl font-bold text-slate-900 mb-4">My Debit Card</h1>
+            <p style="text-xl text-slate-600 max-w-2xl mx-auto">Manage your virtual debit card for secure online payments. Your card uses your username as the cardholder name!</p>
+        </div>
+
+        <!-- Action Bar -->
+        <div style="flex flex-col items-center justify-center text-center mb-8 max-w-4xl mx-auto">
+            <h2 style="text-2xl font-bold text-slate-900 mb-2">Your Debit Card</h2>
+            <p style="text-slate-600 mb-6">Manage your virtual payment card</p>
+            <button id="create-card-btn" style="bg-[#0b5cab] text-white px-5 py-3 rounded-md font-bold hover:bg-[#094b97] cursor-pointer border border-[#0b5cab]">+ Create New Card</button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="cards-container" style="min-h-64 flex flex-col items-center max-w-4xl mx-auto w-full">
+            <!-- Loading State -->
+            <div id="loading-state" style="flex flex-col items-center justify-center text-center py-16">
+                <p style="text-lg text-slate-600">Loading your card...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" style="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center min-h-64 flex flex-col items-center justify-center hidden">
+                <h3 style="text-xl font-semibold text-slate-900 mb-2">No card yet</h3>
+                <p style="text-slate-600 mb-6 max-w-sm">Create your virtual debit card to start making secure online payments.</p>
+                <button id="empty-create-btn" style="bg-emerald-600 text-white px-4 py-2 rounded-md font-medium hover:bg-emerald-700 cursor-pointer">
+                    Create Your Card
+                </button>
+            </div>
+
+            <!-- Cards will be inserted here -->
+            <div id="cards-grid" style="flex flex-col items-center justify-center hidden w-full"></div>
+        </div>
+
+        <!-- Features Section -->
+        <div style="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 mt-16 max-w-4xl mx-auto">
+            <h3 style="text-2xl font-bold text-slate-900 mb-6 text-center">Debit Card Features</h3>
+            <div style="flex flex-col gap-6">
+                <div>
+                    <h4 style="text-lg font-semibold text-slate-900 mb-1">Secure Payments</h4>
+                    <p style="text-slate-600">Each card requires exact details including your username for maximum security.</p>
+                </div>
+                <div>
+                    <h4 style="text-lg font-semibold text-slate-900 mb-1">Instant Creation & Regeneration</h4>
+                    <p style="text-slate-600">Generate your virtual card instantly with random secure details and long expiration dates. Regenerate numbers anytime for security.</p>
+                </div>
+                <div>
+                    <h4 style="text-lg font-semibold text-slate-900 mb-1">Universal Acceptance</h4>
+                    <p style="text-slate-600">Use your card on any merchant site that supports GurtPay payment processing.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div style="bg-amber-50 border border-amber-200 rounded-xl p-6 mt-8 max-w-4xl mx-auto">
+            <div style="flex items-start gap-3">
+                <span style="text-2xl text-amber-600 font-bold">!</span>
+                <div>
+                    <h4 style="text-lg font-semibold text-amber-900 mb-2">Security Reminder</h4>
+                    <p style="text-amber-800">Your debit card uses your username as the cardholder name, not your real name. All payment details must match exactly for transactions to succeed. Keep your card details private and secure. You can regenerate your card numbers anytime if needed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="bg-[#0b5cab] text-white py-16 px-8 md:px-24">
+        <div style="flex flex-row justify-between max-w-[1200px] mx-auto items-center">
+            <div style="flex flex-row items-center gap-2">
+                <img src="https://i.imgur.com/mEg1mYf.png" style="w-8 h-8 rounded" />
+                <p style="font-bold text-lg">GurtPay</p>
+            </div>
+        </div>
+        <separator style="my-8 border-t border-[#e5e7eb]" />
+        <p style="text-white text-sm max-w-[1200px] mx-auto">© 2025 GurtPay — All rights reserved.</p>
+    </div>
+
+    <script src="/static/cards.lua" />
+</body>
